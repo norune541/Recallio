@@ -47,3 +47,4 @@ Thumbs.db
 .npm
 
 *tsconfig.tsbuildinfo
+backend/tsconfig.build.tsbuildinfo
