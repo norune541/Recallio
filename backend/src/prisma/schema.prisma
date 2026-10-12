@@ -1,0 +1,130 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ShopifyShopStatus {
+  CONNECTED
+  DISCONNECTED
+  UNINSTALLED
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+  TOOL
+}
+
+enum ShopMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model User {
+  id          String  @id @default(uuid()) @db.Uuid
+  clerkUserId String  @unique
+  email       String?
+
+  shopMemberships ShopMember[]
+  conversations   Conversation[]
+  oauthAttempts   ShopifyOAuthAttempt[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt
+}
+
+model ShopifyShop {
+  id         String @id @default(uuid()) @db.Uuid
+  shopDomain String @unique
+
+  status        ShopifyShopStatus @default(CONNECTED)
+  grantedScopes String[]          @default([])
+
+  accessTokenEncrypted  String? @db.Text
+  refreshTokenEncrypted String? @db.Text
+
+  accessTokenExpiresAt  DateTime? @db.Timestamptz(3)
+  refreshTokenExpiresAt DateTime? @db.Timestamptz(3)
+
+  connectedAt   DateTime? @db.Timestamptz(3)
+  uninstalledAt DateTime? @db.Timestamptz(3)
+
+  members       ShopMember[]
+  conversations Conversation[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt
+}
+
+model ShopMember {
+  shopId String         @db.Uuid
+  userId String         @db.Uuid
+  role   ShopMemberRole @default(MEMBER)
+
+  shop ShopifyShop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  joinedAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@id([shopId, userId])
+  @@index([userId])
+}
+
+model Conversation {
+  id     String  @id @default(uuid()) @db.Uuid
+  userId String  @db.Uuid
+  shopId String  @db.Uuid
+  title  String?
+
+  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shop ShopifyShop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  messages Message[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, updatedAt])
+  @@index([shopId, updatedAt])
+}
+
+model Message {
+  id             String      @id @default(uuid()) @db.Uuid
+  conversationId String      @db.Uuid
+  role           MessageRole
+  content        String      @db.Text
+  model          String?
+  metadata       Json?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([conversationId, createdAt])
+}
+
+model ShopifyOAuthAttempt {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  stateHash  String    @unique
+  expiresAt  DateTime  @db.Timestamptz(3)
+  consumedAt DateTime? @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([expiresAt])
+}

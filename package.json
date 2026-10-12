@@ -1,0 +1,27 @@
+{
+  "name": "recallio",
+  "author": "Ken",
+  "license": "SEE LICENSE IN LICENSE",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "backend:dev": "bun --filter @recallio/backend start:dev",
+    "backend:build": "bun --filter @recallio/backend build",
+    "backend:start": "bun --filter @recallio/backend start",
+    "backend:format": "bun --filter @recallio/backend format",
+    "backend:lint": "bun --filter @recallio/backend lint",
+    "backend:test": "bun --filter @recallio/backend test",
+    "frontend:dev": "bun --filter @recallio/frontend dev",
+    "frontend:build": "bun --filter @recallio/frontend build",
+    "frontend:lint": "bun --filter @recallio/frontend lint",
+    "frontend:preview": "bun --filter @recallio/frontend preview"
+  },
+  "workspaces": [
+    "backend",
+    "frontend",
+    "shared"
+  ],
+  "devDependencies": {
+    "@types/bun": "^1.4.2"
+  }
+}
