@@ -18,6 +18,10 @@ const envSchema = z.object({
     ),
 
   CLERK_SECRET_KEY: z.string().min(1, 'CLERK_SECRET_KEY is required'),
+  CLERK_PUBLISHABLE_KEY: z
+    .string()
+    .trim()
+    .min(1, 'CLERK_PUBLISHABLE_KEY is required'),
 
   SHOPIFY_API_KEY: z.string().min(1, 'SHOPIFY_API_KEY is required'),
   SHOPIFY_API_SECRET: z.string().min(1, 'SHOPIFY_API_SECRET is required'),
