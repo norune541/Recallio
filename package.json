@@ -14,7 +14,8 @@
     "frontend:dev": "bun --filter @recallio/frontend dev",
     "frontend:build": "bun --filter @recallio/frontend build",
     "frontend:lint": "bun --filter @recallio/frontend lint",
-    "frontend:preview": "bun --filter @recallio/frontend preview"
+    "frontend:preview": "bun --filter @recallio/frontend preview",
+    "api:generate": "bunx openapi-typescript http://localhost:3000/api-json -o shared/src/types/api.d.ts"
   },
   "workspaces": [
     "backend",
@@ -22,7 +23,9 @@
     "shared"
   ],
   "devDependencies": {
-    "@types/bun": "^1.4.2"
+    "@types/bun": "^1.4.2",
+    "openapi-typescript": "^7.13.0",
+    "typescript": "6"
   },
   "dependencies": {
     "zod": "^4.6.7"

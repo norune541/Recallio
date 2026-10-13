@@ -40,8 +40,9 @@ async function bootstrap() {
   };
 
   const document = SwaggerModule.createDocument(app, config, documentOptions);
-  SwaggerModule.setup('docs', app, document);
-
+  SwaggerModule.setup('docs', app, document, {
+    jsonDocumentUrl: 'api-json',
+  });
   await app.listen(PORT);
 
   logger.log(`API running on ${BASE_URL}:${PORT}`);

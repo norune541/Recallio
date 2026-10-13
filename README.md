@@ -12,15 +12,14 @@ Recallio is a monorepo managed with [Bun Workspaces](https://bun.com). The appli
 
 - **`backend`** — NestJS API responsible for server-side logic, configuration, integrations, and data access.
 - **`frontend`** — React application providing the dashboard and user interface.
-- **`shared`** — Shared TypeScript types and definitions consumed by the backend and frontend.
+- **`shared`** — Shared TypeScript schemas, types, and definitions consumed by the backend and frontend.
 
 ```text
 recallio/
 ├── backend/
 │   ├── src/
 │   │   ├── config/          # Environment configuration
-│   │   ├── modules/
-│   │   │
+│   │   ├── modules/         # Application modules
 │   │   ├── prisma/          # Prisma service, schema, and migrations
 │   │   ├── app.controller.ts
 │   │   ├── app.service.ts
@@ -33,6 +32,10 @@ recallio/
 │   └── package.json
 ├── shared/
 │   ├── src/
+│   │   ├── schemas/         # Shared Zod schemas
+│   │   └── types/
+│   │       └── api.d.ts     # Generated OpenAPI types
+│   ├── dist/                # Compiled shared modules
 │   └── package.json
 ├── package.json
 └── bun.lock
@@ -44,23 +47,23 @@ recallio/
 
 Built with NestJS and TypeScript.
 
-| Technology          | Purpose                               |
-| ------------------- | ------------------------------------- |
-| NestJS              | Backend application framework         |
-| Express             | HTTP platform                         |
-| Google GenAI SDK    | Integration with Google AI models     |
-| Shopify API SDK     | Shopify API integration               |
-| Prisma              | Database access and schema management |
-| PostgreSQL adapter  | Prisma integration with PostgreSQL    |
-| `@nestjs/config`    | Application configuration             |
-| `@nestjs/swagger`   | API documentation                     |
-| `@nestjs/terminus`  | Health checks and service monitoring  |
-| `@nestjs/throttler` | Request throttling                    |
-| Zod                 | Runtime schema validation             |
-| Helmet              | HTTP security headers                 |
-| Vitest              | Unit and integration testing          |
-| Oxlint              | Code linting                          |
-| Prettier            | Code formatting                       |
+| Technology          | Purpose                                     |
+| ------------------- | ------------------------------------------- |
+| NestJS              | Backend application framework               |
+| Express             | HTTP platform                               |
+| Google GenAI SDK    | Integration with Google AI models           |
+| Shopify API SDK     | Shopify API integration                     |
+| Prisma              | Database access and schema management       |
+| PostgreSQL adapter  | Prisma integration with PostgreSQL          |
+| `@nestjs/config`    | Application configuration                   |
+| `@nestjs/swagger`   | API documentation and OpenAPI specification |
+| `@nestjs/terminus`  | Health checks and service monitoring        |
+| `@nestjs/throttler` | Request throttling                          |
+| Zod                 | Runtime schema validation                   |
+| Helmet              | HTTP security headers                       |
+| Vitest              | Unit and integration testing                |
+| Oxlint              | Code linting                                |
+| Prettier            | Code formatting                             |
 
 ### Frontend — `@recallio/frontend`
 
@@ -81,12 +84,17 @@ Built with React, TypeScript, and Vite.
 | next-themes     | Theme management                         |
 | Geist           | Typography                               |
 | ESLint          | Code linting                             |
+| `openapi-fetch` | Type-safe API requests                   |
 
 ### Shared — `@recallio/shared`
 
-Contains shared TypeScript types and definitions used across workspaces.
+Contains shared TypeScript schemas and definitions used across workspaces.
 
-Both the backend and frontend declare `@recallio/shared` as a workspace dependency.
+- **Zod schemas** provide runtime validation and are compiled into `shared/dist`.
+- **OpenAPI types** are generated from the backend's OpenAPI document and stored in `shared/src/types/api.d.ts`.
+- The backend and frontend consume the shared package and generated API definitions.
+
+Both the backend and frontend declare `@recallio/shared` as a workspace dependency where required.
 
 ## Application Overview
 
@@ -106,7 +114,7 @@ The current backend foundation includes application configuration, a health-chec
 ## Prerequisites
 
 - [Bun](https://bun.com) 1.4+
-- A PostgreSQL database if required by the configured Prisma datasource
+- PostgreSQL
 - Google AI API credentials for AI functionality
 - Shopify app credentials for Shopify integration
 
@@ -133,24 +141,64 @@ Bun installs dependencies for the configured workspaces, including their shared 
 
 Configure the environment variables required by the backend and frontend.
 
-Depending on the functionality being configured, these may include:
+The backend configuration may include:
 
-- Database connection settings
+- PostgreSQL connection string
 - Google AI API credentials
 - Shopify app credentials
 - Application runtime configuration
 
-Refer to the backend environment configuration and the relevant integration setup for the exact variable names and required values.
+For local frontend development, configure `frontend/.env.local`:
+
+```dotenv
+VITE_API_URL=http://localhost:3000
+```
+
+Adjust the URL if the backend uses a different address or port.
+
+Refer to the backend environment configuration for the exact variable names and required values.
 
 Do not commit secrets or private credentials to version control.
 
-### 4. Set up the database
+### 4. Build the shared package
 
-If the application is configured to use PostgreSQL, configure the database connection and apply the Prisma migrations using the project's Prisma setup.
+Run from the repository root:
 
-Consult the Prisma schema and migration configuration before running database commands.
+```bash
+bun run --cwd shared build
+```
 
-### 5. Start the backend
+This compiles shared runtime modules, including Zod schemas, into `shared/dist`.
+
+Rebuild the shared package after modifying shared runtime code or schemas.
+
+### 5. Generate Prisma Client
+
+Run from the repository root:
+
+```bash
+bunx prisma generate --schema backend/src/prisma/schema.prisma
+```
+
+This generates Prisma Client based on the configured Prisma schema.
+
+Regenerate the client whenever changes to the Prisma schema require it.
+
+### 6. Apply database migrations
+
+Make sure PostgreSQL is running and the database connection string is configured.
+
+Run from the repository root:
+
+```bash
+bunx prisma migrate dev --schema backend/src/prisma/schema.prisma
+```
+
+This applies pending migrations to the development database and creates a migration when schema changes require one.
+
+### 7. Start the backend
+
+Run from the repository root:
 
 ```bash
 bun run backend:dev
@@ -158,9 +206,34 @@ bun run backend:dev
 
 The backend starts in development mode with file watching enabled.
 
-### 6. Start the frontend
+With the default local backend URL, the API documentation is available at:
 
-In a separate terminal:
+- Swagger UI: `http://localhost:3000/docs`
+- OpenAPI JSON: `http://localhost:3000/api-json`
+
+Keep the backend running for the next step.
+
+### 8. Generate OpenAPI types
+
+Open a separate terminal and run from the repository root:
+
+```bash
+bun run api:generate
+```
+
+This fetches the OpenAPI document from the running backend and generates TypeScript API definitions at:
+
+```text
+shared/src/types/api.d.ts
+```
+
+The generated definitions expose types such as `paths`, `components`, and `operations`.
+
+Regenerate these definitions whenever API endpoints, request parameters, or response schemas change. Ensure the running backend reflects the latest API changes before generating.
+
+### 9. Start the frontend
+
+Open another terminal and run from the repository root:
 
 ```bash
 bun run frontend:dev
@@ -171,6 +244,20 @@ Vite starts the frontend development server and prints its local URL in the term
 ## Development Commands
 
 Run these commands from the repository root.
+
+### Shared
+
+| Command                      | Description                                                             |
+| ---------------------------- | ----------------------------------------------------------------------- |
+| `bun run --cwd shared build` | Compile shared runtime modules and Zod schemas                          |
+| `bun run api:generate`       | Generate TypeScript API definitions from the backend's OpenAPI document |
+
+### Database
+
+| Command                                                             | Description                           |
+| ------------------------------------------------------------------- | ------------------------------------- |
+| `bunx prisma generate --schema backend/src/prisma/schema.prisma`    | Generate Prisma Client                |
+| `bunx prisma migrate dev --schema backend/src/prisma/schema.prisma` | Apply development database migrations |
 
 ### Backend
 
@@ -183,7 +270,7 @@ Run these commands from the repository root.
 | `bun run backend:lint`   | Lint backend source and tests         |
 | `bun run backend:test`   | Run backend tests                     |
 
-Additional backend scripts are available within the workspace:
+Additional backend scripts can be run directly through the workspace:
 
 ```bash
 bun --filter @recallio/backend start:debug
@@ -219,6 +306,35 @@ To execute a command directly within a specific workspace, use Bun's `--filter` 
 ```bash
 bun --filter @recallio/backend build
 bun --filter @recallio/backend start:dev
+```
+
+## Type-Safe API Client
+
+Recallio uses `openapi-typescript` to generate TypeScript definitions from the backend's OpenAPI document and `openapi-fetch` to make type-safe API requests from the frontend.
+
+The frontend API client is configured in `frontend/src/lib/api.ts`:
+
+```typescript
+import createClient from 'openapi-fetch';
+import type { paths } from '@recallio/api-types';
+
+export const api = createClient<paths>({
+  baseUrl: import.meta.env.VITE_API_URL,
+});
+```
+
+Example request:
+
+```typescript
+const { data, error, response } = await api.GET('/health');
+```
+
+The generated `paths` type provides endpoint-aware request and response typing.
+
+To regenerate the definitions, start the backend and run:
+
+```bash
+bun run api:generate
 ```
 
 ## License
