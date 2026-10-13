@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/": {
+    "/api": {
         parameters: {
             query?: never;
             header?: never;
@@ -20,7 +20,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/health": {
+    "/api/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AuthController_getProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/health": {
         parameters: {
             query?: never;
             header?: never;
@@ -49,6 +65,23 @@ export interface components {
 export type $defs = Record<string, never>;
 export interface operations {
     AppController_getHello: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_getProfile: {
         parameters: {
             query?: never;
             header?: never;
