@@ -25,7 +25,7 @@ export class UserController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(ClerkAuthGuard)
-  signUp(@Req() req: Request) {
-    this.createUserUseCase.execute(req.user);
+  async signUp(@Req() req: Request) {
+    await this.createUserUseCase.execute(req.user);
   }
 }

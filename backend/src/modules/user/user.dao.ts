@@ -9,7 +9,7 @@ export class UserDao {
   constructor(private readonly prisma: PrismaService) {}
 
   async createUser(input: CreateUserInput): Promise<User> {
-    return this.prisma.user.create({
+    return await this.prisma.user.create({
       data: {
         clerkUserId: input.id,
         firstName: input.firstName,
@@ -22,15 +22,10 @@ export class UserDao {
   }
 
   async findUserByClerkId(id: string): Promise<User | null> {
-    const user = this.prisma.user.findUnique({
+    return await this.prisma.user.findUnique({
       where: {
         clerkUserId: id,
       },
     });
-    if (!user) {
-      return null;
-    }
-
-    return user;
   }
 }

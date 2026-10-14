@@ -38,7 +38,7 @@ export function HomePage() {
           throw new Error('Unable to retrieve Clerk session token.');
         }
 
-        const response = await fetch('http://localhost:3000/api/me', {
+        const response = await fetch('http://localhost:3000/api/users', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
