@@ -33,12 +33,13 @@ enum ShopMemberRole {
 }
 
 model User {
-  id          String  @id @default(uuid()) @db.Uuid
-  firstName   String
-  lastName    String
-  username    String  @unique
-  clerkUserId String  @unique
-  email       String?
+  id          String   @id @default(uuid()) @db.Uuid
+  firstName   String?
+  lastName    String?
+  username    String?  @unique
+  clerkUserId String   @unique
+  email       String[] @unique
+  imageUrl    String
 
   shopMemberships ShopMember[]
   conversations   Conversation[]
