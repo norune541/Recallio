@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Building2, UserRound } from 'lucide-react';
+import { Bell, Store } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -11,13 +11,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import AccountSettings from '../components/AccountSettings';
 
 export default function SettingsPage() {
-  const [workspaceName, setWorkspaceName] = useState('My workspace');
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [weeklySummary, setWeeklySummary] = useState(false);
 
@@ -41,31 +40,19 @@ export default function SettingsPage() {
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
-              <Building2 className="size-5" />
+              <Store className="size-5" />
             </div>
 
             <div>
-              <CardTitle>Workspace</CardTitle>
+              <CardTitle>Shopify shop</CardTitle>
               <CardDescription>
-                Configure your Recallio workspace.
+                Connect and manage your Shopify store.
               </CardDescription>
             </div>
           </div>
         </CardHeader>
 
         <CardContent className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="workspace-name">Workspace name</Label>
-            <Input
-              id="workspace-name"
-              value={workspaceName}
-              onChange={(event) => setWorkspaceName(event.target.value)}
-              placeholder="My workspace"
-            />
-          </div>
-
-          <Separator />
-
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-1">
               <p className="text-sm font-medium">Shopify store</p>
@@ -91,36 +78,7 @@ export default function SettingsPage() {
       </Card>
 
       {/* Account */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
-              <UserRound className="size-5" />
-            </div>
-
-            <div>
-              <CardTitle>Account</CardTitle>
-              <CardDescription>
-                Manage your account information.
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-2">
-          <Label>Authentication</Label>
-          <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
-            <div>
-              <p className="text-sm font-medium">Clerk</p>
-              <p className="text-sm text-muted-foreground">
-                Your authentication is managed by Clerk.
-              </p>
-            </div>
-
-            <Badge variant="secondary">Active</Badge>
-          </div>
-        </CardContent>
-      </Card>
+      <AccountSettings />
 
       {/* Notifications */}
       <Card>

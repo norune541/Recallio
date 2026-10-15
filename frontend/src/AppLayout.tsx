@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import {
   LayoutDashboard,
   MessageSquareText,
@@ -58,7 +59,21 @@ function SidebarToggle() {
 }
 
 export default function AppLayout() {
+  return (
+    <SidebarProvider>
+      <Toaster position="bottom-right" />
+      <AppLayoutContent />
+    </SidebarProvider>
+  );
+}
+
+function AppLayoutContent() {
   const { pathname } = useLocation();
+  const { setOpenMobile } = useSidebar();
+
+  useEffect(() => {
+    setOpenMobile(false);
+  }, [pathname, setOpenMobile]);
 
   const handleConnectStore = () => {
     toast.info('Coming soon', {
@@ -73,9 +88,7 @@ export default function AppLayout() {
   };
 
   return (
-    <SidebarProvider>
-      <Toaster position="bottom-right" />
-
+    <>
       <Sidebar collapsible="offcanvas">
         <SidebarHeader>
           <div className="flex h-12 items-center gap-2 px-2">
@@ -170,6 +183,6 @@ export default function AppLayout() {
           </div>
         </main>
       </SidebarInset>
-    </SidebarProvider>
+    </>
   );
 }
