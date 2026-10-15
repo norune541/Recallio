@@ -23,11 +23,10 @@ const envSchema = z.object({
     .trim()
     .min(1, 'CLERK_PUBLISHABLE_KEY is required'),
 
-  SHOPIFY_API_KEY: z.string().min(1, 'SHOPIFY_API_KEY is required'),
-  SHOPIFY_API_SECRET: z.string().min(1, 'SHOPIFY_API_SECRET is required'),
-  SCOPES: z.string().min(1, 'SCOPES is required'),
-  SHOPIFY_APP_URL: z.string('SHOPIFY_APP_URL must be a valid URL'),
-  SHOPIFY_API_VERSION: z.string().min(1, 'SHOPIFY_API_VERSION is required'),
+  SHOPIFY_CLIENT_ID: z.string().min(1, 'SHOPIFY_CLIENT_ID is required'),
+  SHOPIFY_CLIENT_SECRET: z.string().min(1, 'SHOPIFY_CLIENT_SECRET is required'),
+  SHOPIFY_SCOPES: z.string().min(1, 'SHOPIFY_SCOPES is required'),
+  SHOPIFY_REDIRECT_URL: z.url('SHOPIFY_REDIRECT_URL must be a valid URL'),
 
   GEMINI_API_KEY: z.string().min(1, 'GEMINI_API_KEY is required'),
 });
