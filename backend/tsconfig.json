@@ -18,6 +18,13 @@
     "skipLibCheck": true,
     "strict": true,
     "strictPropertyInitialization": false,
-    "types": ["vitest/globals", "node"]
+    "types": ["vitest/globals", "node"],
+    "ignoreDeprecations": "6.0",
+    "verbatimModuleSyntax": true,
+    "noImplicitAny": false,
+    "baseUrl": "..",
+    "paths": {
+      "@recallio/api-types": ["shared/src/types/api.d.ts"]
+    }
   }
 }

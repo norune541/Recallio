@@ -9,9 +9,11 @@
     }
   ],
   "compilerOptions": {
-    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "baseUrl": "..",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./frontend/src/*"],
+      "@recallio/shared/*": ["shared/src/*"]
     }
   }
 }
