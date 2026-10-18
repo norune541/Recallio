@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import AccountSettings from '../components/AccountSettings';
 
-export default function SettingsPage() {
+export function SettingsPage() {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [weeklySummary, setWeeklySummary] = useState(false);
 
