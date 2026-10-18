@@ -1,6 +1,6 @@
 import { ForbiddenException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CompleteShopifyAuthUseCase } from './use-cases/complete-shopify-auth.use-case.js';
+import { CompleteShopifyAuthUseCase } from './use-cases/auth/complete-shopify-auth.use-case.js';
 
 describe('CompleteShopifyAuthUseCase', () => {
   let useCase: CompleteShopifyAuthUseCase;

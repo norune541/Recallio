@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { createShopifyGraphqlClient } from '../../shopify-api.client.js';
-import { GetValidShopifyAccessTokenUseCase } from '../get-valid-shopify-access-token.use-case.js';
+import { GetValidShopifyAccessTokenUseCase } from '../auth/get-valid-shopify-access-token.use-case.js';
 import { ShopifyDao } from '../../dao/shopify.dao.js';
 
 type ProductStatus = 'ACTIVE' | 'ARCHIVED' | 'DRAFT' | 'UNLISTED';

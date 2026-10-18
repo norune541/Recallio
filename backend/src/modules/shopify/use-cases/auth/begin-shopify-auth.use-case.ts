@@ -1,8 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
-import { env } from '../../../config/env.js';
-import { ShopifyDao } from '../dao/shopify.dao.js';
-import { OAUTH_ATTEMPT_TTL_MS, ShopifyOAuthUtils } from '../shopify-oauth.utils.js';
+import { env } from '../../../../config/env.js';
+import { ShopifyDao } from '../../dao/shopify.dao.js';
+import {
+  OAUTH_ATTEMPT_TTL_MS,
+  ShopifyOAuthUtils,
+} from '../../shopify-oauth.utils.js';
 
 @Injectable()
 export class BeginShopifyAuthUseCase {
@@ -12,7 +15,10 @@ export class BeginShopifyAuthUseCase {
   ) {}
 
   /** Starts OAuth for a Clerk-authenticated user. Pass req.user.id, not the DB UUID. */
-  async execute(clerkUserId: string, shopDomainInput: string | undefined): Promise<string> {
+  async execute(
+    clerkUserId: string,
+    shopDomainInput: string | undefined,
+  ): Promise<string> {
     const shopDomain = this.shopifyOAuthUtils
       .validateShopDomain(shopDomainInput)
       .toLowerCase();
@@ -35,7 +41,10 @@ export class BeginShopifyAuthUseCase {
       expiresAt,
     });
 
-    const authorizationUrl = new URL('/admin/oauth/authorize', `https://${shopDomain}`);
+    const authorizationUrl = new URL(
+      '/admin/oauth/authorize',
+      `https://${shopDomain}`,
+    );
     authorizationUrl.search = new URLSearchParams({
       client_id: env.SHOPIFY_CLIENT_ID,
       scope: this.shopifyOAuthUtils.getRequestedScopes().join(','),

@@ -1,10 +1,7 @@
-import {
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { ShopifyDao } from '../dao/shopify.dao.js';
-import { ShopifyApiClient } from '../shopify-api.client.js';
-import { ShopifyOAuthUtils } from '../shopify-oauth.utils.js';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ShopifyDao } from '../../dao/shopify.dao.js';
+import { ShopifyApiClient } from '../../shopify-api.client.js';
+import { ShopifyOAuthUtils } from '../../shopify-oauth.utils.js';
 
 @Injectable()
 export class RefreshShopifyAccessTokenUseCase {
