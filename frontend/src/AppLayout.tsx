@@ -29,8 +29,15 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 
+import logo from './public/logo.svg';
+
 const navigation = [
-  { label: 'Overview', icon: LayoutDashboard, path: '/' },
+  {
+    label: 'Overview',
+    icon: LayoutDashboard,
+    path: '/',
+    activePaths: ['/details'],
+  },
   { label: 'Conversations', icon: MessageSquareText, path: '/conversations' },
   { label: 'AI Summaries', icon: Sparkles, path: '/summaries' },
   { label: 'Integrations', icon: Store, path: '/integrations' },
@@ -91,13 +98,9 @@ function AppLayoutContent() {
     <>
       <Sidebar collapsible="offcanvas">
         <SidebarHeader>
-          <div className="flex h-12 items-center gap-2 px-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Sparkles className="size-4" />
-            </div>
-            <span className="text-lg font-semibold tracking-tight">
-              Recallio
-            </span>
+          <div className="flex items-center gap-2 py-1">
+            <img src={logo} alt="Recallio" className="max-w-10" />
+            <p className="font-bold">Recallio</p>
           </div>
         </SidebarHeader>
 
@@ -110,7 +113,11 @@ function AppLayoutContent() {
                 const Icon = item.icon;
                 const isActive =
                   item.path === '/'
-                    ? pathname === '/'
+                    ? pathname === '/' ||
+                      item.activePaths?.some(
+                        (path) =>
+                          pathname === path || pathname.startsWith(`${path}/`),
+                      ) === true
                     : pathname === item.path ||
                       pathname.startsWith(`${item.path}/`);
 

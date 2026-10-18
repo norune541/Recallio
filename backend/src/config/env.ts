@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { z } from 'zod';
 
 const envSchema = z.object({
@@ -27,6 +28,14 @@ const envSchema = z.object({
   SHOPIFY_CLIENT_SECRET: z.string().min(1, 'SHOPIFY_CLIENT_SECRET is required'),
   SHOPIFY_SCOPES: z.string().min(1, 'SHOPIFY_SCOPES is required'),
   SHOPIFY_REDIRECT_URL: z.url('SHOPIFY_REDIRECT_URL must be a valid URL'),
+  SHOPIFY_API_VERSION: z.string().min(1, 'SHOPIFY_API_VERSION is required'),
+  SHOPIFY_TOKEN_ENCRYPTION_KEY: z
+    .string()
+    .regex(
+      /^[a-f0-9]{64}$/i,
+      'SHOPIFY_TOKEN_ENCRYPTION_KEY must be a 64-character hex string',
+    )
+    .min(1, 'SHOPIFY_TOKEN_ENCRYPTION_KEY is required'),
 
   GEMINI_API_KEY: z.string().min(1, 'GEMINI_API_KEY is required'),
 });
