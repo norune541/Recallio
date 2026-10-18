@@ -87,6 +87,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/integrations/shopify/shop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Shopify shop details for the current authenticated user */
+        get: operations["ShopifyController_getShop"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -225,6 +242,153 @@ export interface components {
             onlineStorePreviewUrl: string | null;
             /** @description Product price range */
             priceRangeV2: components["schemas"]["ShopifyPriceRangeDto"];
+        };
+        ShopifyShopPrimaryDomainDto: {
+            /**
+             * @description Primary domain host name
+             * @example shop.example.com
+             */
+            host: string;
+            /**
+             * @description Primary domain URL
+             * @example https://shop.example.com
+             */
+            url: string;
+        };
+        ShopifyShopPlanDto: {
+            /**
+             * @description Human-readable name of the Shopify plan
+             * @example Basic
+             */
+            displayName: string;
+            /**
+             * @description True for Partner development stores
+             * @example false
+             */
+            partnerDevelopment: boolean;
+            /**
+             * @description True for Shopify Plus stores
+             * @example false
+             */
+            shopifyPlus: boolean;
+        };
+        ShopifyShopDto: {
+            /**
+             * @description Shopify shop ID in GraphQL format
+             * @example gid://shopify/Shop/12345678
+             */
+            id: string;
+            /**
+             * @description Shop name
+             * @example My Store
+             */
+            name: string;
+            /**
+             * @description The shop .myshopify.com domain
+             * @example example.myshopify.com
+             */
+            myshopifyDomain: string;
+            /**
+             * @description Online store URL
+             * @example https://example.myshopify.com
+             */
+            url: string;
+            /**
+             * @description Shop owner email, used by Shopify to contact the owner
+             * @example owner@example.com
+             */
+            email: string;
+            /**
+             * @description Public contact email shown to customers
+             * @example support@example.com
+             */
+            contactEmail: string;
+            /**
+             * @description Shop owner name
+             * @example Jane Doe
+             */
+            shopOwnerName: string;
+            /**
+             * @description Currency the shop sells in (ISO 4217)
+             * @example USD
+             */
+            currencyCode: string;
+            /**
+             * @description Presentment currencies enabled for the shop (ISO 4217)
+             * @example [
+             *       "USD",
+             *       "EUR"
+             *     ]
+             */
+            enabledPresentmentCurrencies: string[];
+            /**
+             * @description Shop time zone as defined by IANA
+             * @example Europe/Berlin
+             */
+            ianaTimezone: string;
+            /**
+             * @description Shop time zone abbreviation
+             * @example CET
+             */
+            timezoneAbbreviation: string;
+            /**
+             * @description Shop creation timestamp (ISO 8601)
+             * @example 2024-05-17T09:30:00Z
+             */
+            createdAt: string;
+            /** @description Primary domain of the online store */
+            primaryDomain: components["schemas"]["ShopifyShopPrimaryDomainDto"];
+            /** @description Shopify billing plan of the shop */
+            plan: components["schemas"]["ShopifyShopPlanDto"];
+            /**
+             * @description Countries the shop ships to (ISO 3166-1 alpha-2)
+             * @example [
+             *       "US",
+             *       "CA",
+             *       "DE"
+             *     ]
+             */
+            shipsToCountries: string[];
+            /**
+             * @description Whether the shop has outstanding setup steps
+             * @example false
+             */
+            setupRequired: boolean;
+        };
+        ShopifyShopNotFoundErrorDto: {
+            /**
+             * @description HTTP status code
+             * @example 404
+             */
+            statusCode: number;
+            /**
+             * @description Which entity was not found
+             * @example Shop not found
+             * @enum {string}
+             */
+            message: "User not found" | "Shop not found";
+            /**
+             * @description HTTP status text
+             * @example Not Found
+             */
+            error: string;
+        };
+        ShopifyShopBadGatewayErrorDto: {
+            /**
+             * @description HTTP status code
+             * @example 502
+             */
+            statusCode: number;
+            /**
+             * @description Shopify error message or a fallback message
+             * @example Shopify GraphQL request failed
+             */
+            message: string;
+            /**
+             * @description HTTP status text
+             * @example Bad Gateway
+             */
+            error: string;
         };
     };
     responses: never;
@@ -487,6 +651,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ShopifyProductDto"][];
+                };
+            };
+        };
+    };
+    ShopifyController_getShop: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Shop details fetched from Shopify */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShopifyShopDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShopifyShopNotFoundErrorDto"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShopifyShopBadGatewayErrorDto"];
                 };
             };
         };
