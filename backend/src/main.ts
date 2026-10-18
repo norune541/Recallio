@@ -68,4 +68,4 @@ async function bootstrap() {
   logger.log(`Health check: ${BASE_URL}/api/health`);
 }
 
-bootstrap();
+await bootstrap();

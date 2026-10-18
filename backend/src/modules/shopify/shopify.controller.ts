@@ -1,6 +1,12 @@
 import { Controller, Get, Query, Req, Res, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
+import {
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+  ApiNotFoundResponse,
+  ApiBadGatewayResponse,
+} from '@nestjs/swagger';
 
 import { ClerkAuthGuard } from '../../common/clerk-auth.guard.js';
 import {
@@ -8,9 +14,17 @@ import {
   ShopifyCallbackResponseDto,
 } from './dto/shopify.dto.js';
 import { ShopifyProductDto } from './dto/shopify-products.dto.js';
-import { BeginShopifyAuthUseCase } from './use-cases/begin-shopify-auth.use-case.js';
-import { CompleteShopifyAuthUseCase } from './use-cases/complete-shopify-auth.use-case.js';
+import {
+  ShopifyShopDto,
+  ShopifyShopNotFoundErrorDto,
+  ShopifyShopBadGatewayErrorDto,
+} from './dto/shopify-shop.dto.js';
+
+import { BeginShopifyAuthUseCase } from './use-cases/auth/begin-shopify-auth.use-case.js';
+import { CompleteShopifyAuthUseCase } from './use-cases/auth/complete-shopify-auth.use-case.js';
 import { GetProductsUseCase } from './use-cases/api/get-products.js';
+import { GetShopUseCase } from './use-cases/api/get-shop.js';
+import type { Request, Response } from 'express';
 
 @ApiTags('Shopify')
 @Controller('integrations/shopify')
@@ -19,6 +33,7 @@ export class ShopifyController {
     private readonly beginShopifyAuth: BeginShopifyAuthUseCase,
     private readonly completeShopifyAuth: CompleteShopifyAuthUseCase,
     private readonly getProductsUseCase: GetProductsUseCase,
+    private readonly getShopUseCase: GetShopUseCase,
   ) {}
 
   /**
@@ -96,6 +111,8 @@ export class ShopifyController {
     });
   }
 
+  // TODO: Add cursor pagination to GET /products (`limit`, `after`, return `{ items, pageInfo }`).
+  // Verify the default `status` filter (docs mark `active` as default) and `MAX_PAGE_SIZE`.
   @Get('products')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({
@@ -107,7 +124,22 @@ export class ShopifyController {
     type: [ShopifyProductDto],
   })
   async getProducts(@Req() req: Request) {
-    const products = await this.getProductsUseCase.execute(req.user.id);
-    return products;
+    return await this.getProductsUseCase.execute(req.user.id);
+  }
+
+  @Get('shop')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({
+    summary: 'Get Shopify shop details for the current authenticated user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Shop details fetched from Shopify',
+    type: ShopifyShopDto,
+  })
+  @ApiNotFoundResponse({ type: ShopifyShopNotFoundErrorDto })
+  @ApiBadGatewayResponse({ type: ShopifyShopBadGatewayErrorDto })
+  async getShop(@Req() req: Request): Promise<ShopifyShopDto> {
+    return await this.getShopUseCase.execute(req.user.id);
   }
 }
