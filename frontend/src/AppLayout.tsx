@@ -32,7 +32,12 @@ import {
 import logo from './public/logo.svg';
 
 const navigation = [
-  { label: 'Overview', icon: LayoutDashboard, path: '/' },
+  {
+    label: 'Overview',
+    icon: LayoutDashboard,
+    path: '/',
+    activePaths: ['/details'],
+  },
   { label: 'Conversations', icon: MessageSquareText, path: '/conversations' },
   { label: 'AI Summaries', icon: Sparkles, path: '/summaries' },
   { label: 'Integrations', icon: Store, path: '/integrations' },
@@ -108,7 +113,11 @@ function AppLayoutContent() {
                 const Icon = item.icon;
                 const isActive =
                   item.path === '/'
-                    ? pathname === '/'
+                    ? pathname === '/' ||
+                      item.activePaths?.some(
+                        (path) =>
+                          pathname === path || pathname.startsWith(`${path}/`),
+                      ) === true
                     : pathname === item.path ||
                       pathname.startsWith(`${item.path}/`);
 
