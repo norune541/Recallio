@@ -12,6 +12,7 @@ import { RefreshShopifyAccessTokenUseCase } from './refresh-shopify-access-token
 
 @Injectable()
 export class GetValidShopifyAccessTokenUseCase {
+  /** Orchestration layer: decides whether the stored token is still valid and triggers refresh if needed. */
   constructor(
     private readonly shopifyDao: ShopifyDao,
     private readonly shopifyOAuthUtils: ShopifyOAuthUtils,

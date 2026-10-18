@@ -16,9 +16,9 @@ import {
 import { ShopifyProductDto } from './dto/shopify-products.dto.js';
 import {
   ShopifyShopDto,
-  ShopifyShopNotFoundErrorDto,
   ShopifyShopBadGatewayErrorDto,
 } from './dto/shopify-shop.dto.js';
+import { NotFoundErrorDto } from 'backend/src/common/errors/notFoundErrors.dto.js';
 
 import { BeginShopifyAuthUseCase } from './use-cases/auth/begin-shopify-auth.use-case.js';
 import { CompleteShopifyAuthUseCase } from './use-cases/auth/complete-shopify-auth.use-case.js';
@@ -65,7 +65,7 @@ export class ShopifyController {
       shop,
     );
 
-    res.redirect(authorizationUrl);
+    return res.redirect(authorizationUrl);
   }
 
   /**
@@ -100,12 +100,12 @@ export class ShopifyController {
   async callback(
     @Query() query: ShopifyCallbackQueryDto,
     @Res() res: Response,
-  ): Promise<void> {
+  ): Promise<Response> {
     const result = await this.completeShopifyAuth.execute(
       query as Record<string, unknown>,
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Shopify store connected successfully',
       shop: result.shopDomain,
     });
@@ -123,7 +123,12 @@ export class ShopifyController {
     description: 'List of products for the user shop',
     type: [ShopifyProductDto],
   })
-  async getProducts(@Req() req: Request) {
+  @ApiNotFoundResponse({
+    description: 'User or connected shop not found (see `code`)',
+    type: NotFoundErrorDto,
+  })
+  @ApiBadGatewayResponse({ type: ShopifyShopBadGatewayErrorDto })
+  async getProducts(@Req() req: Request): Promise<ShopifyProductDto[]> {
     return await this.getProductsUseCase.execute(req.user.id);
   }
 
@@ -137,7 +142,10 @@ export class ShopifyController {
     description: 'Shop details fetched from Shopify',
     type: ShopifyShopDto,
   })
-  @ApiNotFoundResponse({ type: ShopifyShopNotFoundErrorDto })
+  @ApiNotFoundResponse({
+    description: 'User or connected shop not found (see `code`)',
+    type: NotFoundErrorDto,
+  })
   @ApiBadGatewayResponse({ type: ShopifyShopBadGatewayErrorDto })
   async getShop(@Req() req: Request): Promise<ShopifyShopDto> {
     return await this.getShopUseCase.execute(req.user.id);

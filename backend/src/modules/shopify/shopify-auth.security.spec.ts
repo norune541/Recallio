@@ -3,10 +3,36 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CompleteShopifyAuthUseCase } from './use-cases/auth/complete-shopify-auth.use-case.js';
 
 describe('CompleteShopifyAuthUseCase', () => {
+  type MockFn = ReturnType<typeof vi.fn>;
+
+  type MockDao = {
+    findOAuthAttemptByStateHash: MockFn;
+    consumeOAuthAttempt: MockFn;
+    saveConnectedShopAndMember: MockFn;
+  };
+
+  type MockOAuthUtils = {
+    normalizeQuery: MockFn;
+    validateShopDomain: MockFn;
+    verifyCallbackHmac: MockFn;
+    hashState: MockFn;
+    getRequestedScopes: MockFn;
+    requireString: MockFn;
+    requirePositiveSeconds: MockFn;
+    parseGrantedScopes: MockFn;
+    scopeIsGranted: MockFn;
+    validateCallbackTimestamp: MockFn;
+  };
+
+  type MockApiClient = {
+    exchangeAuthorizationCode: MockFn;
+    verifyAdminApiAccess: MockFn;
+  };
+
   let useCase: CompleteShopifyAuthUseCase;
-  let dao: any;
-  let oAuthUtils: any;
-  let apiClient: any;
+  let dao: MockDao;
+  let oAuthUtils: MockOAuthUtils;
+  let apiClient: MockApiClient;
 
   beforeEach(() => {
     dao = {

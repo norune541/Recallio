@@ -1,11 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { BadGatewayException } from '@nestjs/common';
 
 import { ShopifyDao } from '../../dao/shopify.dao.js';
-import { GetValidShopifyAccessTokenUseCase } from '../auth/get-valid-shopify-access-token.use-case.js';
-import { createShopifyGraphqlClient } from '../../shopify-api.client.js';
 import { ShopifyShopDto } from '../../dto/shopify-shop.dto.js';
 
+import { GetValidShopifyAccessTokenUseCase } from '../auth/get-valid-shopify-access-token.use-case.js';
+import { createShopifyGraphqlClient } from '../../shopify-api.client.js';
+import {
+  ShopNotFoundException,
+  UserNotFoundException,
+} from 'backend/src/common/errors/notFoundExceptions.js';
 interface ShopifyShopData {
   shop: ShopifyShopDto;
 }
@@ -49,12 +53,12 @@ export class GetShopUseCase {
   async execute(clerkUserId: string): Promise<ShopifyShopDto> {
     const user = await this.shopifyDao.findUserIdByClerkUserId(clerkUserId);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new UserNotFoundException();
     }
 
     const shop = await this.shopifyDao.findShopByUserId(user.id);
     if (!shop) {
-      throw new NotFoundException('Shop not found');
+      throw new ShopNotFoundException();
     }
 
     const accessToken = await this.getValidToken.execute(shop.shopDomain);

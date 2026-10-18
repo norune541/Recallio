@@ -10,13 +10,7 @@ const envSchema = z.object({
     .int('Port must be an integer')
     .positive('Port must be greater than 0'),
 
-  DATABASE_URL: z
-    .string()
-    .trim()
-    .regex(
-      /^postgresql:\/\/(?:([^:@\/]+)(?::([^@\/]*))?@)?([^:\/]+)(?::(\d+))?\/([^?]+)(?:\?(.*))?$/,
-      { error: 'Invalid DATABASE_URL format' },
-    ),
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 
   CLERK_SECRET_KEY: z.string().min(1, 'CLERK_SECRET_KEY is required'),
   CLERK_PUBLISHABLE_KEY: z
