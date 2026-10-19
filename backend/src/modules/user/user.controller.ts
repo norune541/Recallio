@@ -15,12 +15,14 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { UserResponseDto } from './dto/UserResponse.dto.js';
+import { UserNotFoundDto } from './dto/UserNotFound.dto.js';
+import { UserNotFoundException } from './dto/UserNotFound.dto.js';
+
 import { ClerkAuthGuard } from 'backend/src/common/clerk-auth.guard.js';
 import { CreateUserUseCase } from './use-cases/create-user.js';
+
 import { UserDao } from './user.dao.js';
-import { UserResponseDto } from './dto/UserResponse.dto.js';
-import { UserNotFoundException } from 'backend/src/common/errors/notFoundExceptions.js';
-import { NotFoundErrorDto } from 'backend/src/common/errors/notFoundErrors.dto.js';
 import type { Request } from 'express';
 
 @ApiTags('users')
@@ -35,10 +37,7 @@ export class UserController {
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Get user from DB' })
   @ApiOkResponse({ type: UserResponseDto })
-  @ApiNotFoundResponse({
-    description: "User not found (see 'code')",
-    type: NotFoundErrorDto,
-  })
+  @ApiNotFoundResponse({ description: 'User not found', type: UserNotFoundDto })
   async getProfile(@Req() req: Request): Promise<UserResponseDto> {
     const user = await this.userDao.findUserByClerkId(req.user.id);
     if (!user) throw new UserNotFoundException();

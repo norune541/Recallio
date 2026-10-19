@@ -1,8 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  ERROR_CODES,
-  type ErrorCode,
-} from 'backend/src/common/errors/notFoundExceptions.js';
 
 export class ShopifyShopPrimaryDomainDto {
   @ApiProperty({
@@ -148,10 +144,10 @@ export class ShopifyShopNotFoundErrorDto {
 
   @ApiProperty({
     description: 'Machine-readable error code',
-    enum: Object.values(ERROR_CODES),
-    example: ERROR_CODES.ShopNotFound,
+    enum: ['SHOP_NOT_FOUND'],
+    example: ['SHOP_NOT_FOUND'],
   })
-  code!: ErrorCode;
+  code!: 'SHOP_NOT_FOUND';
 
   @ApiProperty({
     description: 'Human-readable message',

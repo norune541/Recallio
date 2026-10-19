@@ -2,10 +2,8 @@ import { BadGatewayException, Injectable } from '@nestjs/common';
 import { createShopifyGraphqlClient } from '../../shopify-api.client.js';
 import { GetValidShopifyAccessTokenUseCase } from '../auth/get-valid-shopify-access-token.use-case.js';
 import { ShopifyDao } from '../../dao/shopify.dao.js';
-import {
-  UserNotFoundException,
-  ShopNotFoundException,
-} from 'backend/src/common/errors/notFoundExceptions.js';
+import { UserNotFoundException } from 'backend/src/modules/user/dto/UserNotFound.dto.js';
+import { ShopNotFoundException } from '../../dto/shop-notFound.dto.js';
 
 type ProductStatus = 'ACTIVE' | 'ARCHIVED' | 'DRAFT' | 'UNLISTED';
 type Money = { amount: string; currencyCode: string };

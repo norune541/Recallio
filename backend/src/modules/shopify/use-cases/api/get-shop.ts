@@ -6,10 +6,9 @@ import { ShopifyShopDto } from '../../dto/shopify-shop.dto.js';
 
 import { GetValidShopifyAccessTokenUseCase } from '../auth/get-valid-shopify-access-token.use-case.js';
 import { createShopifyGraphqlClient } from '../../shopify-api.client.js';
-import {
-  ShopNotFoundException,
-  UserNotFoundException,
-} from 'backend/src/common/errors/notFoundExceptions.js';
+import { UserNotFoundException } from 'backend/src/modules/user/dto/UserNotFound.dto.js';
+import { ShopNotFoundException } from '../../dto/shop-notFound.dto.js';
+
 interface ShopifyShopData {
   shop: ShopifyShopDto;
 }

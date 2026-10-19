@@ -151,24 +151,24 @@ export interface components {
              */
             updatedAt: string;
         };
-        NotFoundErrorDto: {
+        UserNotFoundDto: {
             /**
              * @description HTTP status code
              * @example 404
+             * @enum {number}
              */
-            statusCode: number;
+            statusCode: 404;
             /**
-             * @description Machine-readable error code: USER_NOT_FOUND if the user has no record, SHOP_NOT_FOUND if the user has no connected shop
-             * @example SHOP_NOT_FOUND
+             * @description Machine-readable error code
+             * @example USER_NOT_FOUND
              * @enum {string}
              */
-            code: "USER_NOT_FOUND" | "SHOP_NOT_FOUND";
+            code: "USER_NOT_FOUND";
             /**
-             * @description Human-readable message, not intended for programmatic checks
-             * @example Shop not found
-             * @enum {string}
+             * @description Human-readable error code
+             * @example User not found
              */
-            message: "User not found" | "Shop not found";
+            message: string;
             /**
              * @description HTTP status text
              * @example Not Found
@@ -186,6 +186,30 @@ export interface components {
              * @example example.myshopify.com
              */
             shop: string;
+        };
+        ShopNotFoundDto: {
+            /**
+             * @description HTTP status code
+             * @example 404
+             * @enum {number}
+             */
+            statusCode: 404;
+            /**
+             * @description Machine-readable error code
+             * @example SHOP_NOT_FOUND
+             * @enum {string}
+             */
+            code: "SHOP_NOT_FOUND";
+            /**
+             * @description Human-readable error code
+             * @example Shop not found
+             */
+            message: string;
+            /**
+             * @description HTTP status text
+             * @example Not Found
+             */
+            error: string;
         };
         ShopifyImageDto: {
             /**
@@ -613,13 +637,13 @@ export interface operations {
                     "application/json": components["schemas"]["UserResponseDto"];
                 };
             };
-            /** @description User not found (see 'code') */
+            /** @description User not found */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NotFoundErrorDto"];
+                    "application/json": components["schemas"]["UserNotFoundDto"];
                 };
             };
         };
@@ -644,9 +668,9 @@ export interface operations {
     };
     ShopifyController_connect: {
         parameters: {
-            query?: {
+            query: {
                 /** @description Shop domain to connect, e.g. example.myshopify.com */
-                shop?: string;
+                shop: string;
             };
             header?: never;
             path?: never;
@@ -665,13 +689,13 @@ export interface operations {
     };
     ShopifyController_callback: {
         parameters: {
-            query?: {
+            query: {
                 /** @description Shop domain returned by Shopify */
-                shop?: string;
+                shop: string;
                 /** @description Authorization code returned by Shopify */
-                code?: string;
+                code: string;
                 /** @description State value used for CSRF verification */
-                state?: string;
+                state: string;
                 /** @description Error code if the merchant declines the app request */
                 error?: string;
                 /** @description HMAC signature provided by Shopify */
@@ -714,13 +738,13 @@ export interface operations {
                     "application/json": components["schemas"]["ShopifyProductDto"][];
                 };
             };
-            /** @description User or connected shop not found (see `code`) */
+            /** @description Shop or user not found (see `code`) */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NotFoundErrorDto"];
+                    "application/json": components["schemas"]["ShopNotFoundDto"] | components["schemas"]["UserNotFoundDto"];
                 };
             };
             502: {
@@ -751,13 +775,13 @@ export interface operations {
                     "application/json": components["schemas"]["ShopifyShopDto"];
                 };
             };
-            /** @description User or connected shop not found (see `code`) */
+            /** @description Shop or user not found (see `code`) */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NotFoundErrorDto"];
+                    "application/json": components["schemas"]["ShopNotFoundDto"] | components["schemas"]["UserNotFoundDto"];
                 };
             };
             502: {

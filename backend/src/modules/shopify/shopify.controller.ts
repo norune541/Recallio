@@ -6,6 +6,8 @@ import {
   ApiTags,
   ApiNotFoundResponse,
   ApiBadGatewayResponse,
+  ApiExtraModels,
+  refs,
 } from '@nestjs/swagger';
 
 import { ClerkAuthGuard } from '../../common/clerk-auth.guard.js';
@@ -18,7 +20,8 @@ import {
   ShopifyShopDto,
   ShopifyShopBadGatewayErrorDto,
 } from './dto/shopify-shop.dto.js';
-import { NotFoundErrorDto } from 'backend/src/common/errors/notFoundErrors.dto.js';
+import { ShopNotFoundDto } from './dto/shop-notFound.dto.js';
+import { UserNotFoundDto } from '../user/dto/UserNotFound.dto.js';
 
 import { BeginShopifyAuthUseCase } from './use-cases/auth/begin-shopify-auth.use-case.js';
 import { CompleteShopifyAuthUseCase } from './use-cases/auth/complete-shopify-auth.use-case.js';
@@ -47,7 +50,7 @@ export class ShopifyController {
   @ApiOperation({ summary: 'Start Shopify OAuth flow' })
   @ApiQuery({
     name: 'shop',
-    required: false,
+    required: true,
     type: String,
     description: 'Shop domain to connect, e.g. example.myshopify.com',
   })
@@ -76,19 +79,19 @@ export class ShopifyController {
   @ApiOperation({ summary: 'Handle Shopify OAuth callback' })
   @ApiQuery({
     name: 'shop',
-    required: false,
+    required: true,
     type: String,
     description: 'Shop domain returned by Shopify',
   })
   @ApiQuery({
     name: 'code',
-    required: false,
+    required: true,
     type: String,
     description: 'Authorization code returned by Shopify',
   })
   @ApiQuery({
     name: 'state',
-    required: false,
+    required: true,
     type: String,
     description: 'State value used for CSRF verification',
   })
@@ -123,9 +126,10 @@ export class ShopifyController {
     description: 'List of products for the user shop',
     type: [ShopifyProductDto],
   })
+  @ApiExtraModels(ShopNotFoundDto, UserNotFoundDto)
   @ApiNotFoundResponse({
-    description: 'User or connected shop not found (see `code`)',
-    type: NotFoundErrorDto,
+    description: 'Shop or user not found (see `code`)',
+    schema: { oneOf: refs(ShopNotFoundDto, UserNotFoundDto) },
   })
   @ApiBadGatewayResponse({ type: ShopifyShopBadGatewayErrorDto })
   async getProducts(@Req() req: Request): Promise<ShopifyProductDto[]> {
@@ -142,11 +146,12 @@ export class ShopifyController {
     description: 'Shop details fetched from Shopify',
     type: ShopifyShopDto,
   })
-  @ApiNotFoundResponse({
-    description: 'User or connected shop not found (see `code`)',
-    type: NotFoundErrorDto,
-  })
   @ApiBadGatewayResponse({ type: ShopifyShopBadGatewayErrorDto })
+  @ApiExtraModels(ShopNotFoundDto, UserNotFoundDto)
+  @ApiNotFoundResponse({
+    description: 'Shop or user not found (see `code`)',
+    schema: { oneOf: refs(ShopNotFoundDto, UserNotFoundDto) },
+  })
   async getShop(@Req() req: Request): Promise<ShopifyShopDto> {
     return await this.getShopUseCase.execute(req.user.id);
   }
