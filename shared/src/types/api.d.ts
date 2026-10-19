@@ -27,8 +27,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get user from DB */
         get: operations["UserController_getProfile"];
         put?: never;
+        /** Create user using clerk middleware */
         post: operations["UserController_signUp"];
         delete?: never;
         options?: never;
@@ -108,6 +110,71 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        UserResponseDto: {
+            /**
+             * @description Clerk user id
+             * @example user_2abc123
+             */
+            clerkUserId: string;
+            /**
+             * @description First name
+             * @example John
+             */
+            firstName: Record<string, never>;
+            /**
+             * @description Last name
+             * @example Doe
+             */
+            lastName: Record<string, never>;
+            /**
+             * @description Username
+             * @example john_doe
+             */
+            username: Record<string, never>;
+            /**
+             * @description Email adresses of the user
+             * @example [
+             *       "johndoe@example.com"
+             *     ]
+             */
+            email: string[];
+            /**
+             * Format: date-time
+             * @description Creation timestamp
+             * @example 2024-01-15T10:30:00Z
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description Last update timestamp
+             * @example 2024-01-20T12:00:00Z
+             */
+            updatedAt: string;
+        };
+        NotFoundErrorDto: {
+            /**
+             * @description HTTP status code
+             * @example 404
+             */
+            statusCode: number;
+            /**
+             * @description Machine-readable error code: USER_NOT_FOUND if the user has no record, SHOP_NOT_FOUND if the user has no connected shop
+             * @example SHOP_NOT_FOUND
+             * @enum {string}
+             */
+            code: "USER_NOT_FOUND" | "SHOP_NOT_FOUND";
+            /**
+             * @description Human-readable message, not intended for programmatic checks
+             * @example Shop not found
+             * @enum {string}
+             */
+            message: "User not found" | "Shop not found";
+            /**
+             * @description HTTP status text
+             * @example Not Found
+             */
+            error: string;
+        };
         ShopifyCallbackResponseDto: {
             /**
              * @description Success message returned after connecting the store
@@ -243,6 +310,23 @@ export interface components {
             /** @description Product price range */
             priceRangeV2: components["schemas"]["ShopifyPriceRangeDto"];
         };
+        ShopifyShopBadGatewayErrorDto: {
+            /**
+             * @description HTTP status code
+             * @example 502
+             */
+            statusCode: number;
+            /**
+             * @description Shopify error message or a fallback message
+             * @example Shopify GraphQL request failed
+             */
+            message: string;
+            /**
+             * @description HTTP status text
+             * @example Bad Gateway
+             */
+            error: string;
+        };
         ShopifyShopPrimaryDomainDto: {
             /**
              * @description Primary domain host name
@@ -354,41 +438,6 @@ export interface components {
              * @example false
              */
             setupRequired: boolean;
-        };
-        ShopifyShopNotFoundErrorDto: {
-            /**
-             * @description HTTP status code
-             * @example 404
-             */
-            statusCode: number;
-            /**
-             * @description Which entity was not found
-             * @example Shop not found
-             * @enum {string}
-             */
-            message: "User not found" | "Shop not found";
-            /**
-             * @description HTTP status text
-             * @example Not Found
-             */
-            error: string;
-        };
-        ShopifyShopBadGatewayErrorDto: {
-            /**
-             * @description HTTP status code
-             * @example 502
-             */
-            statusCode: number;
-            /**
-             * @description Shopify error message or a fallback message
-             * @example Shopify GraphQL request failed
-             */
-            message: string;
-            /**
-             * @description HTTP status text
-             * @example Bad Gateway
-             */
-            error: string;
         };
     };
     responses: never;
@@ -560,7 +609,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserResponseDto"];
+                };
+            };
+            /** @description User not found (see 'code') */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotFoundErrorDto"];
+                };
             };
         };
     };
@@ -573,6 +633,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description User created */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -653,6 +714,23 @@ export interface operations {
                     "application/json": components["schemas"]["ShopifyProductDto"][];
                 };
             };
+            /** @description User or connected shop not found (see `code`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotFoundErrorDto"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShopifyShopBadGatewayErrorDto"];
+                };
+            };
         };
     };
     ShopifyController_getShop: {
@@ -673,12 +751,13 @@ export interface operations {
                     "application/json": components["schemas"]["ShopifyShopDto"];
                 };
             };
+            /** @description User or connected shop not found (see `code`) */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ShopifyShopNotFoundErrorDto"];
+                    "application/json": components["schemas"]["NotFoundErrorDto"];
                 };
             };
             502: {
