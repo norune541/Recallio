@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Card,
   CardHeader,
@@ -5,18 +6,40 @@ import {
   CardDescription,
   CardContent,
 } from '@/components/ui/card';
-import { Store, ExternalLink } from 'lucide-react';
+import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Store, ExternalLink, ArrowLeftRight, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from 'sonner';
 import { useIsMobile } from '@/common/hooks/use-mobile';
 
 import { useShopify } from '../hooks/ShopifyHook';
+import logo from '../../../public/logo.svg';
+import shopify from '../../../public/shopify.svg';
 
 export function ShopifyStore() {
+  const [connectDialogOpen, setConnectDialogOpen] = useState(false);
+  const [shopDomain, setShopDomain] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
+
   const { data, isPending, isError, error } = useShopify();
   const isMobile = useIsMobile();
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    setFormError(null);
+
+    const normalizedDomain = shopDomain
+      .trim()
+      .replace(/^https?:\/\//, '')
+      .replace(/\/+$/, '');
+
+    if (!/^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/.test(normalizedDomain)) {
+      setFormError('Enter a valid domain like example.myshopify.com.');
+      return;
+    }
+  };
 
   if (isPending) {
     return (
@@ -139,7 +162,14 @@ export function ShopifyStore() {
       </Card>
     );
   }
-  if (isError && 'code' in error && error.code === 'SHOP_NOT_FOUND') {
+
+  if (
+    isError &&
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    error.code === 'SHOP_NOT_FOUND'
+  ) {
     return (
       <Card>
         <CardHeader>
@@ -171,16 +201,93 @@ export function ShopifyStore() {
 
           <Button
             variant="outline"
-            onClick={() =>
-              toast.info('Coming soon', {
-                description: 'Shopify integration is not available yet.',
-              })
-            }
+            onClick={() => {
+              setFormError(null);
+              setConnectDialogOpen(true);
+            }}
           >
             Connect store
           </Button>
+
+          <Dialog open={connectDialogOpen} onOpenChange={setConnectDialogOpen}>
+            <DialogContent className="sm:max-w-md px-8 py-8 min-h-96 flex flex-col justify-between">
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="flex items-center justify-center gap-3">
+                  <img
+                    src={logo}
+                    alt="Recallio"
+                    className="size-10 object-contain"
+                  />
+                  <ArrowLeftRight className="size-4 text-muted-foreground" />
+                  <img
+                    src={shopify}
+                    alt="Shopify"
+                    className="size-10 object-contain"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <h2 className="text-xl font-semibold tracking-tight">
+                    Connect Shopify to Recallio
+                  </h2>
+                  <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                    Enter your Shopify store domain to connect it to Recallio.
+                  </p>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="shop-domain"
+                    className="text-sm font-medium block mb-2"
+                  >
+                    Store domain
+                  </label>
+                  <Input
+                    id="shop-domain"
+                    placeholder="example.myshopify.com"
+                    value={shopDomain}
+                    onChange={(event) => {
+                      setShopDomain(event.target.value);
+                      if (formError) setFormError(null);
+                    }}
+                    autoComplete="url"
+                    required
+                    className={
+                      formError
+                        ? 'border-destructive focus-visible:ring-destructive'
+                        : ''
+                    }
+                  />
+                  {formError && (
+                    <div className="flex items-center gap-2 text-xs text-destructive animate-in fade-in-50">
+                      <AlertCircle className="size-3.5 shrink-0" />
+                      <span>{formError}</span>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground block mt-5">
+                    Use your permanent myshopify.com domain.
+                  </p>
+                </div>
+
+                <DialogFooter className="pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setConnectDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit">Connect store</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     );
   }
+
+  return null;
 }
