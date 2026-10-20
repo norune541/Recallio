@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
   CardHeader,
@@ -22,6 +23,7 @@ export function ShopifyStore() {
   const [connectDialogOpen, setConnectDialogOpen] = useState(false);
   const [shopDomain, setShopDomain] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const { data, isPending, isError, error } = useShopify();
   const isMobile = useIsMobile();
@@ -163,6 +165,45 @@ export function ShopifyStore() {
     );
   }
 
+  if (isError && 'code' in error && error.code === 'USER_NOT_FOUND') {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+              <AlertCircle className="size-5 text-muted-foreground" />
+            </div>
+
+            <div>
+              <CardTitle>Something went wrong</CardTitle>
+              <CardDescription>
+                We couldn't verify your account.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-5">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Unexpected error</p>
+            <p className="text-sm text-muted-foreground">
+              We couldn't verify your account. Please reload this page. If that
+              doesn't help, clear this site’s cookies and data in your browser
+              settings, then try signing in again.
+            </p>
+          </div>
+
+          <Button
+            onClick={() => {
+              navigate('/login');
+            }}
+          >
+            Sign in again
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
   if (
     isError &&
     error &&
