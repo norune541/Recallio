@@ -5,19 +5,19 @@ import { PrismaService } from '../../../prisma/prisma.service.js';
 export class ShopifyDao {
   constructor(private readonly prisma: PrismaService) {}
 
-  findUserIdByClerkUserId(clerkUserId: string) {
-    return this.prisma.user.findUnique({
+  async findUserIdByClerkUserId(clerkUserId: string) {
+    return await this.prisma.user.findUnique({
       where: { clerkUserId },
       select: { id: true },
     });
   }
 
-  createOAuthAttempt(input: {
+  async createOAuthAttempt(input: {
     userId: string;
     stateHash: string;
     expiresAt: Date;
   }) {
-    return this.prisma.shopifyOAuthAttempt.create({
+    return await this.prisma.shopifyOAuthAttempt.create({
       data: {
         userId: input.userId,
         stateHash: input.stateHash,
@@ -27,8 +27,8 @@ export class ShopifyDao {
     });
   }
 
-  findOAuthAttemptByStateHash(stateHash: string) {
-    return this.prisma.shopifyOAuthAttempt.findUnique({
+  async findOAuthAttemptByStateHash(stateHash: string) {
+    return await this.prisma.shopifyOAuthAttempt.findUnique({
       where: { stateHash },
       select: {
         id: true,
@@ -112,8 +112,8 @@ export class ShopifyDao {
     });
   }
 
-  findTokenState(shopDomain: string) {
-    return this.prisma.shopifyShop.findUnique({
+  async findTokenState(shopDomain: string) {
+    return await this.prisma.shopifyShop.findUnique({
       where: { shopDomain },
       select: {
         status: true,
@@ -125,8 +125,8 @@ export class ShopifyDao {
     });
   }
 
-  findRefreshState(shopDomain: string) {
-    return this.prisma.shopifyShop.findUnique({
+  async findRefreshState(shopDomain: string) {
+    return await this.prisma.shopifyShop.findUnique({
       where: { shopDomain },
       select: {
         status: true,
@@ -136,7 +136,7 @@ export class ShopifyDao {
     });
   }
 
-  saveRefreshedTokens(input: {
+  async saveRefreshedTokens(input: {
     shopDomain: string;
     accessTokenEncrypted: string;
     refreshTokenEncrypted: string;
@@ -144,7 +144,7 @@ export class ShopifyDao {
     refreshTokenExpiresAt: Date;
     grantedScopes: string[];
   }) {
-    return this.prisma.shopifyShop.update({
+    return await this.prisma.shopifyShop.update({
       where: { shopDomain: input.shopDomain },
       data: {
         accessTokenEncrypted: input.accessTokenEncrypted,
@@ -157,8 +157,8 @@ export class ShopifyDao {
     });
   }
 
-  markShopDisconnected(shopDomain: string) {
-    return this.prisma.shopifyShop.updateMany({
+  async markShopDisconnected(shopDomain: string) {
+    return await this.prisma.shopifyShop.updateMany({
       where: { shopDomain },
       data: {
         status: 'DISCONNECTED',
@@ -174,6 +174,9 @@ export class ShopifyDao {
     const membership = await this.prisma.shopMember.findUnique({
       where: {
         userId,
+        shop: {
+          status: 'CONNECTED',
+        },
       },
       select: {
         shop: {

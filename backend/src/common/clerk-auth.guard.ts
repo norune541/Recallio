@@ -20,7 +20,7 @@ export class ClerkAuthGuard implements CanActivate {
     try {
       const user = await clerkClient.users.getUser(userId);
       req.user = user;
-    } catch (err) {
+    } catch {
       throw new UnauthorizedException('Failed to fetch user data');
     }
 

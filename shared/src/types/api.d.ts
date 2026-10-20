@@ -4,38 +4,6 @@
  */
 
 export interface paths {
-    "/api": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["AppController_getHello"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["AuthController_getProfile"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -52,10 +20,450 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get user from DB */
+        get: operations["UserController_getProfile"];
+        put?: never;
+        /** Create user using clerk middleware */
+        post: operations["UserController_signUp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/shopify/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Start Shopify OAuth flow */
+        get: operations["ShopifyController_connect"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/shopify/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Handle Shopify OAuth callback */
+        get: operations["ShopifyController_callback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/shopify/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Shopify products for the current authenticated user */
+        get: operations["ShopifyController_getProducts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/shopify/shop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Shopify shop details for the current authenticated user */
+        get: operations["ShopifyController_getShop"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: never;
+    schemas: {
+        UserResponseDto: {
+            /**
+             * @description Clerk user id
+             * @example user_2abc123
+             */
+            clerkUserId: string;
+            /**
+             * @description First name
+             * @example John
+             */
+            firstName: Record<string, never>;
+            /**
+             * @description Last name
+             * @example Doe
+             */
+            lastName: Record<string, never>;
+            /**
+             * @description Username
+             * @example john_doe
+             */
+            username: Record<string, never>;
+            /**
+             * @description Email adresses of the user
+             * @example [
+             *       "johndoe@example.com"
+             *     ]
+             */
+            email: string[];
+            /**
+             * Format: date-time
+             * @description Creation timestamp
+             * @example 2024-01-15T10:30:00Z
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description Last update timestamp
+             * @example 2024-01-20T12:00:00Z
+             */
+            updatedAt: string;
+        };
+        UserNotFoundDto: {
+            /**
+             * @description HTTP status code
+             * @example 404
+             * @enum {number}
+             */
+            statusCode: 404;
+            /**
+             * @description Machine-readable error code
+             * @example USER_NOT_FOUND
+             * @enum {string}
+             */
+            code: "USER_NOT_FOUND";
+            /**
+             * @description Human-readable error code
+             * @example User not found
+             */
+            message: string;
+            /**
+             * @description HTTP status text
+             * @example Not Found
+             */
+            error: string;
+        };
+        ShopifyCallbackResponseDto: {
+            /**
+             * @description Success message returned after connecting the store
+             * @example Shopify store connected successfully
+             */
+            message: string;
+            /**
+             * @description Connected Shopify shop domain
+             * @example example.myshopify.com
+             */
+            shop: string;
+        };
+        ShopNotFoundDto: {
+            /**
+             * @description HTTP status code
+             * @example 404
+             * @enum {number}
+             */
+            statusCode: 404;
+            /**
+             * @description Machine-readable error code
+             * @example SHOP_NOT_FOUND
+             * @enum {string}
+             */
+            code: "SHOP_NOT_FOUND";
+            /**
+             * @description Human-readable error code
+             * @example Shop not found
+             */
+            message: string;
+            /**
+             * @description HTTP status text
+             * @example Not Found
+             */
+            error: string;
+        };
+        ShopifyImageDto: {
+            /**
+             * @description Image URL
+             * @example https://cdn.shopify.com/s/files/1/0000/0000/products/shoes.jpg
+             */
+            url: string;
+            /**
+             * @description Image alternative text
+             * @example Red running shoes
+             */
+            altText: string | null;
+            /**
+             * @description Original image width in pixels, null if the image is not hosted by Shopify
+             * @example 1200
+             */
+            width: number | null;
+            /**
+             * @description Original image height in pixels, null if the image is not hosted by Shopify
+             * @example 800
+             */
+            height: number | null;
+        };
+        ShopifyMediaPreviewDto: {
+            /** @description Preview image of the media */
+            image: components["schemas"]["ShopifyImageDto"] | null;
+        };
+        ShopifyFeaturedMediaDto: {
+            /** @description Preview of the featured media */
+            preview: components["schemas"]["ShopifyMediaPreviewDto"] | null;
+        };
+        ShopifyMoneyDto: {
+            /**
+             * @description Product price amount
+             * @example 59.99
+             */
+            amount: string;
+            /**
+             * @description Currency code
+             * @example USD
+             */
+            currencyCode: string;
+        };
+        ShopifyPriceRangeDto: {
+            /** @description Minimum variant price */
+            minVariantPrice: components["schemas"]["ShopifyMoneyDto"];
+            /** @description Maximum variant price */
+            maxVariantPrice: components["schemas"]["ShopifyMoneyDto"];
+        };
+        ShopifyProductDto: {
+            /**
+             * @description Shopify product ID in GraphQL format
+             * @example gid://shopify/Product/123456789
+             */
+            id: string;
+            /**
+             * @description Product title
+             * @example Running Shoes
+             */
+            title: string;
+            /**
+             * @description URL-safe product handle
+             * @example running-shoes
+             */
+            handle: string;
+            /**
+             * @description Product vendor
+             * @example Northwind
+             */
+            vendor: string;
+            /**
+             * @description Product type
+             * @example Footwear
+             */
+            productType: string;
+            /**
+             * @description Product tags
+             * @example [
+             *       "sport",
+             *       "new-arrivals"
+             *     ]
+             */
+            tags: string[];
+            /**
+             * @description Product publication status
+             * @example ACTIVE
+             * @enum {string}
+             */
+            status: "ACTIVE" | "ARCHIVED" | "DRAFT" | "UNLISTED";
+            /**
+             * @description Product creation timestamp
+             * @example 2024-01-15T10:30:00Z
+             */
+            createdAt: string;
+            /**
+             * @description Product last update timestamp
+             * @example 2024-01-20T12:00:00Z
+             */
+            updatedAt: string;
+            /**
+             * @description Product publication timestamp
+             * @example 2024-01-18T09:00:00Z
+             */
+            publishedAt: string | null;
+            /**
+             * @description Total inventory count across all variants
+             * @example 24
+             */
+            totalInventory: number;
+            /** @description Featured media of the product, null if the product has no media */
+            featuredMedia: components["schemas"]["ShopifyFeaturedMediaDto"] | null;
+            /**
+             * @description Online store product URL
+             * @example https://example.myshopify.com/products/running-shoes
+             */
+            onlineStoreUrl: string | null;
+            /**
+             * @description Online store preview URL
+             * @example https://example.myshopify.com/products/running-shoes?preview=true
+             */
+            onlineStorePreviewUrl: string | null;
+            /** @description Product price range */
+            priceRangeV2: components["schemas"]["ShopifyPriceRangeDto"];
+        };
+        ShopifyShopBadGatewayErrorDto: {
+            /**
+             * @description HTTP status code
+             * @example 502
+             */
+            statusCode: number;
+            /**
+             * @description Shopify error message or a fallback message
+             * @example Shopify GraphQL request failed
+             */
+            message: string;
+            /**
+             * @description HTTP status text
+             * @example Bad Gateway
+             */
+            error: string;
+        };
+        ShopifyShopPrimaryDomainDto: {
+            /**
+             * @description Primary domain host name
+             * @example shop.example.com
+             */
+            host: string;
+            /**
+             * @description Primary domain URL
+             * @example https://shop.example.com
+             */
+            url: string;
+        };
+        ShopifyShopPlanDto: {
+            /**
+             * @description Human-readable name of the Shopify plan
+             * @example Basic
+             */
+            displayName: string;
+            /**
+             * @description True for Partner development stores
+             * @example false
+             */
+            partnerDevelopment: boolean;
+            /**
+             * @description True for Shopify Plus stores
+             * @example false
+             */
+            shopifyPlus: boolean;
+        };
+        ShopifyShopDto: {
+            /**
+             * @description Shopify shop ID in GraphQL format
+             * @example gid://shopify/Shop/12345678
+             */
+            id: string;
+            /**
+             * @description Shop name
+             * @example My Store
+             */
+            name: string;
+            /**
+             * @description The shop .myshopify.com domain
+             * @example example.myshopify.com
+             */
+            myshopifyDomain: string;
+            /**
+             * @description Online store URL
+             * @example https://example.myshopify.com
+             */
+            url: string;
+            /**
+             * @description Shop owner email, used by Shopify to contact the owner
+             * @example owner@example.com
+             */
+            email: string;
+            /**
+             * @description Public contact email shown to customers
+             * @example support@example.com
+             */
+            contactEmail: string;
+            /**
+             * @description Shop owner name
+             * @example Jane Doe
+             */
+            shopOwnerName: string;
+            /**
+             * @description Currency the shop sells in (ISO 4217)
+             * @example USD
+             */
+            currencyCode: string;
+            /**
+             * @description Presentment currencies enabled for the shop (ISO 4217)
+             * @example [
+             *       "USD",
+             *       "EUR"
+             *     ]
+             */
+            enabledPresentmentCurrencies: string[];
+            /**
+             * @description Shop time zone as defined by IANA
+             * @example Europe/Berlin
+             */
+            ianaTimezone: string;
+            /**
+             * @description Shop time zone abbreviation
+             * @example CET
+             */
+            timezoneAbbreviation: string;
+            /**
+             * @description Shop creation timestamp (ISO 8601)
+             * @example 2024-05-17T09:30:00Z
+             */
+            createdAt: string;
+            /** @description Primary domain of the online store */
+            primaryDomain: components["schemas"]["ShopifyShopPrimaryDomainDto"];
+            /** @description Shopify billing plan of the shop */
+            plan: components["schemas"]["ShopifyShopPlanDto"];
+            /**
+             * @description Countries the shop ships to (ISO 3166-1 alpha-2)
+             * @example [
+             *       "US",
+             *       "CA",
+             *       "DE"
+             *     ]
+             */
+            shipsToCountries: string[];
+            /**
+             * @description Whether the shop has outstanding setup steps
+             * @example false
+             */
+            setupRequired: boolean;
+        };
+    };
     responses: never;
     parameters: never;
     requestBodies: never;
@@ -64,40 +472,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    AppController_getHello: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AuthController_getProfile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     HealthController_check: {
         parameters: {
             query?: never;
@@ -242,6 +616,180 @@ export interface operations {
                             };
                         };
                     };
+                };
+            };
+        };
+    };
+    UserController_getProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponseDto"];
+                };
+            };
+            /** @description User not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserNotFoundDto"];
+                };
+            };
+        };
+    };
+    UserController_signUp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description User created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ShopifyController_connect: {
+        parameters: {
+            query: {
+                /** @description Shop domain to connect, e.g. example.myshopify.com */
+                shop: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect to Shopify authorization page */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ShopifyController_callback: {
+        parameters: {
+            query: {
+                /** @description Shop domain returned by Shopify */
+                shop: string;
+                /** @description Authorization code returned by Shopify */
+                code: string;
+                /** @description State value used for CSRF verification */
+                state: string;
+                /** @description Error code if the merchant declines the app request */
+                error?: string;
+                /** @description HMAC signature provided by Shopify */
+                hmac?: string;
+                /** @description Timestamp of the OAuth callback */
+                timestamp?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Shop successfully connected */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShopifyCallbackResponseDto"];
+                };
+            };
+        };
+    };
+    ShopifyController_getProducts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of products for the user shop */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShopifyProductDto"][];
+                };
+            };
+            /** @description Shop or user not found (see `code`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShopNotFoundDto"] | components["schemas"]["UserNotFoundDto"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShopifyShopBadGatewayErrorDto"];
+                };
+            };
+        };
+    };
+    ShopifyController_getShop: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Shop details fetched from Shopify */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShopifyShopDto"];
+                };
+            };
+            /** @description Shop or user not found (see `code`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShopNotFoundDto"] | components["schemas"]["UserNotFoundDto"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShopifyShopBadGatewayErrorDto"];
                 };
             };
         };

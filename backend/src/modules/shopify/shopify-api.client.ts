@@ -18,7 +18,68 @@ import { env } from '../../config/env.js';
 import type { ShopifyTokenResponse } from './shopify-oauth.utils.js';
 
 const SHOPIFY_TIMEOUT_MS = 30_000;
-const DEFAULT_SHOPIFY_API_VERSION = ApiVersion.October26;
+const SESSION_TTL_MS = 60 * 60 * 1000;
+
+const VERIFY_ACCESS_QUERY = `#graphql
+  query VerifyAccess {
+    products(first: 1) {
+      edges { node { id } }
+    }
+  }
+`;
+
+const API_VERSIONS: readonly string[] = Object.values(ApiVersion);
+
+function isApiVersion(value: string): value is ApiVersion {
+  return API_VERSIONS.includes(value);
+}
+
+function resolveShopifyApiVersion(version: string): ApiVersion {
+  const trimmed = version.trim();
+  if (isApiVersion(trimmed)) return trimmed;
+
+  throw new Error(
+    `SHOPIFY_API_VERSION "${trimmed}" is not supported by the installed ` +
+      `@shopify/shopify-api. Supported: ${API_VERSIONS.join(', ')}`,
+  );
+}
+
+function getHttpStatus(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null || !('response' in error)) {
+    return undefined;
+  }
+
+  const { response } = error;
+  if (
+    typeof response !== 'object' ||
+    response === null ||
+    !('code' in response)
+  ) {
+    return undefined;
+  }
+
+  return typeof response.code === 'number' ? response.code : undefined;
+}
+
+function hasGraphqlErrors(payload: unknown): boolean {
+  if (typeof payload !== 'object' || payload === null) return true;
+  if (!('data' in payload)) return true;
+  if (!('errors' in payload)) return false;
+
+  const { errors } = payload;
+  if (errors === undefined || errors === null) return false;
+  return !Array.isArray(errors) || errors.length > 0;
+}
+
+function isShopifyTokenResponse(value: unknown): value is ShopifyTokenResponse {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'access_token' in value &&
+    typeof value.access_token === 'string' &&
+    value.access_token.length > 0
+  );
+}
 
 export const redirectUrl = new URL(env.SHOPIFY_REDIRECT_URL);
 export const apiVersion = resolveShopifyApiVersion(env.SHOPIFY_API_VERSION);
@@ -47,7 +108,7 @@ export function createShopifySession(
     isOnline: false,
     scope,
     accessToken,
-    expires: new Date(Date.now() + 60 * 60 * 1000),
+    expires: new Date(Date.now() + SESSION_TTL_MS),
   });
 }
 
@@ -62,6 +123,7 @@ export function createShopifyGraphqlClient(
 
 @Injectable()
 export class ShopifyApiClient {
+  /** Transport layer: it only talks to Shopify. It does not read/write app state or persist tokens. */
   async exchangeAuthorizationCode(
     shopDomain: string,
     code: string,
@@ -89,94 +151,62 @@ export class ShopifyApiClient {
     }
 
     if (!response.ok) {
-      throw new BadGatewayException(
-        `Shopify rejected the authorization-code exchange (HTTP ${response.status}).`,
-      );
+      const message = `Shopify rejected the authorization-code exchange (HTTP ${response.status}).`;
+      const isClientError =
+        response.status >= 400 &&
+        response.status < 500 &&
+        response.status !== 429;
+
+      throw isClientError
+        ? new BadRequestException(message)
+        : new BadGatewayException(message);
     }
 
-    return this.readTokenResponse(response);
+    return await this.readTokenResponse(response);
   }
 
   async refreshAccessToken(
     shopDomain: string,
     currentRefreshToken: string,
   ): Promise<ShopifyTokenResponse> {
+    return this.exchangeRefreshToken(shopDomain, currentRefreshToken);
+  }
+
+  async exchangeRefreshToken(
+    shopDomain: string,
+    currentRefreshToken: string,
+  ): Promise<ShopifyTokenResponse> {
+    let session: Session;
     try {
-      const { session } = await shopify.auth.refreshToken({
+      ({ session } = await shopify.auth.refreshToken({
         shop: shopDomain,
         refreshToken: currentRefreshToken,
-      });
-
-      return {
-        access_token: session.accessToken,
-        refresh_token: session.refreshToken ?? currentRefreshToken,
-        scope: session.scope,
-        expires_in: this.toPositiveSeconds(session.expires),
-        refresh_token_expires_in: this.toPositiveSeconds(
-          session.refreshTokenExpires,
-        ),
-      };
+      }));
     } catch (error) {
-      if (error instanceof HttpResponseError) {
-        const status = error.response?.code;
-        if (status === 401) {
-          throw new UnauthorizedException(
-            'Shopify refresh token is invalid or expired. Reconnect the store.',
-          );
-        }
-        if (status === 429 || (typeof status === 'number' && status >= 500)) {
-          throw new ServiceUnavailableException(
-            'Shopify is temporarily unavailable while refreshing the access token.',
-          );
-        }
-      }
-
-      if (error instanceof TypeError) {
-        throw new ServiceUnavailableException(
-          'Could not reach Shopify to refresh the access token. Retry the request.',
-        );
-      }
-
-      throw new BadGatewayException(
-        'Shopify rejected the token refresh request.',
-      );
+      throw this.toRefreshException(error);
     }
+
+    return {
+      access_token: session.accessToken,
+      refresh_token: session.refreshToken ?? currentRefreshToken,
+      scope: session.scope,
+      expires_in: this.toPositiveSeconds(session.expires),
+      refresh_token_expires_in: this.toPositiveSeconds(
+        session.refreshTokenExpires,
+      ),
+    };
   }
 
   async verifyAdminApiAccess(
     shopDomain: string,
     accessToken: string,
   ): Promise<void> {
-    const session = new Session({
-      id: crypto.randomUUID(),
-      shop: shopDomain,
-      state: '',
-      isOnline: false,
-      scope: 'read_products',
-      accessToken,
-      expires: new Date(Date.now() + SHOPIFY_TIMEOUT_MS),
-    });
-
-    const client = new shopify.clients.Graphql({ session });
+    const client = createShopifyGraphqlClient(shopDomain, accessToken);
 
     try {
-      const response = await client.request<{ data?: { products?: unknown } }>(
-        `query { products(first: 1) { edges { node { id } } } }`,
-      );
-      const payload = response as {
-        data?: { products?: unknown };
-        errors?: unknown;
-      };
+      const response: unknown = await client.request(VERIFY_ACCESS_QUERY);
 
-      if (
-        typeof payload !== 'object' ||
-        payload === null ||
-        !('data' in payload) ||
-        ('errors' in payload &&
-          payload.errors !== undefined &&
-          payload.errors !== null &&
-          (!Array.isArray(payload.errors) || payload.errors.length > 0))
-      ) {
+      if (hasGraphqlErrors(response)) {
         throw new BadGatewayException(
           'Shopify Admin API token verification returned GraphQL errors.',
         );
@@ -191,7 +221,7 @@ export class ShopifyApiClient {
         );
       }
       if (error instanceof HttpResponseError) {
-        const status = error.response?.code;
+        const status = getHttpStatus(error);
         if (typeof status === 'number') {
           throw new BadGatewayException(
             `Shopify Admin API rejected the access token (HTTP ${status}).`,
@@ -205,16 +235,52 @@ export class ShopifyApiClient {
     }
   }
 
+  private toRefreshException(error: unknown): Error {
+    if (error instanceof HttpResponseError) {
+      const status = getHttpStatus(error);
+
+      if (status === 401) {
+        return new UnauthorizedException(
+          'Shopify refresh token is invalid or expired. Reconnect the store.',
+        );
+      }
+      if (status === 429 || (typeof status === 'number' && status >= 500)) {
+        return new ServiceUnavailableException(
+          'Shopify is temporarily unavailable while refreshing the access token.',
+        );
+      }
+    }
+
+    if (error instanceof TypeError) {
+      return new ServiceUnavailableException(
+        'Could not reach Shopify to refresh the access token. Retry the request.',
+      );
+    }
+
+    return new BadGatewayException(
+      'Shopify rejected the token refresh request.',
+    );
+  }
+
   private async readTokenResponse(
     response: Response,
   ): Promise<ShopifyTokenResponse> {
+    let body: unknown;
     try {
-      return (await response.json()) as ShopifyTokenResponse;
+      body = await response.json();
     } catch {
       throw new BadGatewayException(
         'Shopify returned an invalid JSON response.',
       );
     }
+
+    if (!isShopifyTokenResponse(body)) {
+      throw new BadGatewayException(
+        'Shopify returned an unexpected token response.',
+      );
+    }
+
+    return body;
   }
 
   private toPositiveSeconds(date: Date | undefined): number | undefined {
@@ -222,20 +288,4 @@ export class ShopifyApiClient {
     const seconds = Math.ceil((date.getTime() - Date.now()) / 1000);
     return seconds > 0 ? seconds : 1;
   }
-}
-
-function resolveShopifyApiVersion(version: string): ApiVersion {
-  const trimmed = version.trim();
-  const match = Object.values(ApiVersion).find(
-    (candidate) => candidate === trimmed,
-  );
-  if (match) return match as ApiVersion;
-
-  if (/^\d{4}-\d{2}$/.test(trimmed)) {
-    return DEFAULT_SHOPIFY_API_VERSION;
-  }
-
-  throw new BadRequestException(
-    'SHOPIFY_API_VERSION must look like 2026-10 and match a Shopify API enum value.',
-  );
 }

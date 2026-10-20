@@ -1,6 +1,6 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { UserDao } from '../user.dao.js';
-import type { CreateUserInput } from '../dto/CreateUserInput.js';
+import type { CreateUserInput } from '../dto/CreateUserInput.dto.js';
 
 @Injectable()
 export class CreateUserUseCase {

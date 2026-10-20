@@ -1,11 +1,9 @@
-import {
-  BadGatewayException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadGatewayException, Injectable } from '@nestjs/common';
 import { createShopifyGraphqlClient } from '../../shopify-api.client.js';
-import { GetValidShopifyAccessTokenUseCase } from '../get-valid-shopify-access-token.use-case.js';
+import { GetValidShopifyAccessTokenUseCase } from '../auth/get-valid-shopify-access-token.use-case.js';
 import { ShopifyDao } from '../../dao/shopify.dao.js';
+import { UserNotFoundException } from 'backend/src/modules/user/dto/UserNotFound.dto.js';
+import { ShopNotFoundException } from '../../dto/shop-notFound.dto.js';
 
 type ProductStatus = 'ACTIVE' | 'ARCHIVED' | 'DRAFT' | 'UNLISTED';
 type Money = { amount: string; currencyCode: string };
@@ -117,13 +115,13 @@ export class GetProductsUseCase {
     const user = await this.shopifyDao.findUserIdByClerkUserId(clerkUserId);
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new UserNotFoundException();
     }
 
     const shop = await this.shopifyDao.findShopByUserId(user.id);
 
     if (!shop) {
-      throw new NotFoundException('Shop not found');
+      throw new ShopNotFoundException();
     }
 
     const accessToken = await this.getValidToken.execute(shop.shopDomain);

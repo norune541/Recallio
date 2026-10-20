@@ -3,12 +3,16 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ShopifyDao } from '../dao/shopify.dao.js';
-import { ShopifyOAuthUtils, TOKEN_REFRESH_WINDOW_MS } from '../shopify-oauth.utils.js';
+import { ShopifyDao } from '../../dao/shopify.dao.js';
+import {
+  ShopifyOAuthUtils,
+  TOKEN_REFRESH_WINDOW_MS,
+} from '../../shopify-oauth.utils.js';
 import { RefreshShopifyAccessTokenUseCase } from './refresh-shopify-access-token.use-case.js';
 
 @Injectable()
 export class GetValidShopifyAccessTokenUseCase {
+  /** Orchestration layer: decides whether the stored token is still valid and triggers refresh if needed. */
   constructor(
     private readonly shopifyDao: ShopifyDao,
     private readonly shopifyOAuthUtils: ShopifyOAuthUtils,
@@ -28,7 +32,8 @@ export class GetValidShopifyAccessTokenUseCase {
 
     const accessTokenIsStillValid =
       shop.accessTokenExpiresAt !== null &&
-      shop.accessTokenExpiresAt.getTime() > Date.now() + TOKEN_REFRESH_WINDOW_MS;
+      shop.accessTokenExpiresAt.getTime() >
+        Date.now() + TOKEN_REFRESH_WINDOW_MS;
 
     if (accessTokenIsStillValid) {
       return this.shopifyOAuthUtils.decryptToken(shop.accessTokenEncrypted);
