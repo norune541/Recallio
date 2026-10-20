@@ -20,6 +20,8 @@ import {
   ShopifyShopDto,
   ShopifyShopBadGatewayErrorDto,
 } from './dto/shopify-shop.dto.js';
+import { ShopifyConnectResponseDto } from './dto/shopify-connect.dto.js';
+
 import { ShopNotFoundDto } from './dto/shop-notFound.dto.js';
 import { UserNotFoundDto } from '../user/dto/UserNotFound.dto.js';
 
@@ -61,14 +63,9 @@ export class ShopifyController {
   async connect(
     @Req() req: Request,
     @Query('shop') shop: string | undefined,
-    @Res() res: Response,
-  ): Promise<void> {
-    const authorizationUrl = await this.beginShopifyAuth.execute(
-      req.user.id,
-      shop,
-    );
-
-    return res.redirect(authorizationUrl);
+  ): Promise<ShopifyConnectResponseDto> {
+    const url = await this.beginShopifyAuth.execute(req.user.id, shop);
+    return { url };
   }
 
   /**
@@ -103,15 +100,10 @@ export class ShopifyController {
   async callback(
     @Query() query: ShopifyCallbackQueryDto,
     @Res() res: Response,
-  ): Promise<Response> {
-    const result = await this.completeShopifyAuth.execute(
-      query as Record<string, unknown>,
-    );
+  ): Promise<void> {
+    await this.completeShopifyAuth.execute(query as Record<string, unknown>);
 
-    return res.status(200).json({
-      message: 'Shopify store connected successfully',
-      shop: result.shopDomain,
-    });
+    return res.redirect(`http://localhost:5173/`);
   }
 
   // TODO: Add cursor pagination to GET /products (`limit`, `after`, return `{ items, pageInfo }`).

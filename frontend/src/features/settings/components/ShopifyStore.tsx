@@ -13,9 +13,11 @@ import { Store, ExternalLink, ArrowLeftRight, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useIsMobile } from '@/common/hooks/use-mobile';
 
-import { useShopify } from '../hooks/ShopifyHook';
+import { useIsMobile } from '@/common/hooks/use-mobile';
+import { useShopify } from '../hooks/getShopify';
+import { useConnectShopify } from '../hooks/connectShopify';
+
 import logo from '../../../public/logo.svg';
 import shopify from '../../../public/shopify.svg';
 
@@ -24,6 +26,7 @@ export function ShopifyStore() {
   const [shopDomain, setShopDomain] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const connect = useConnectShopify();
 
   const { data, isPending, isError, error } = useShopify();
   const isMobile = useIsMobile();
@@ -41,6 +44,15 @@ export function ShopifyStore() {
       setFormError('Enter a valid domain like example.myshopify.com.');
       return;
     }
+
+    connect.mutate(normalizedDomain, {
+      onSuccess: ({ url }) => {
+        window.location.href = url;
+      },
+      onError: () => {
+        setFormError('Could not start the connection. Please try again.');
+      },
+    });
   };
 
   if (isPending) {
@@ -320,7 +332,9 @@ export function ShopifyStore() {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit">Connect store</Button>
+                  <Button type="submit" disabled={connect.isPending}>
+                    {connect.isPending ? 'Connecting...' : 'Connect store'}
+                  </Button>
                 </DialogFooter>
               </form>
             </DialogContent>
