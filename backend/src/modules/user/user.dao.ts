@@ -15,7 +15,7 @@ export class UserDao {
         firstName: input.firstName,
         lastName: input.lastName,
         username: input.username,
-        email: input.emailAddresses.map((item) => item.emailAddress),
+        email: input.email,
         imageUrl: input.imageUrl,
       },
     });
@@ -24,7 +24,7 @@ export class UserDao {
   async findUserByEmail(email: string): Promise<UserDto | null> {
     return await this.prisma.user.findUnique({
       where: {
-        email: [email],
+        email,
       },
       select: {
         clerkUserId: true,
@@ -34,6 +34,14 @@ export class UserDao {
         email: true,
         createdAt: true,
         updatedAt: true,
+      },
+    });
+  }
+
+  async deleteUser(clerkUserId: string): Promise<void> {
+    await this.prisma.user.deleteMany({
+      where: {
+        clerkUserId,
       },
     });
   }

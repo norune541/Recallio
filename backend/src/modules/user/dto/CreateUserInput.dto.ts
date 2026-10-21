@@ -4,5 +4,5 @@ export type CreateUserInput = {
   readonly lastName: string | null;
   readonly username: string | null;
   readonly imageUrl: string;
-  readonly emailAddresses: readonly { emailAddress: string }[];
+  readonly email: string;
 };

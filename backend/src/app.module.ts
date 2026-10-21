@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { UserModule } from './modules/user/user.module.js';
 import { ShopifyModule } from './modules/shopify/shopify.module.js';
+import { ClerkModule } from './modules/clerk/clerk.module.js';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { ShopifyModule } from './modules/shopify/shopify.module.js';
     PrismaModule,
     UserModule,
     ShopifyModule,
+    ClerkModule,
   ],
 })
 export class AppModule {}

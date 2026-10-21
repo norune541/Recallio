@@ -29,7 +29,7 @@ export class UserResponseDto implements UserDto {
     description: 'Email adresses of the user',
     example: ['johndoe@example.com'],
   })
-  email!: string[];
+  email!: string;
 
   @ApiProperty({
     description: 'Creation timestamp',
