@@ -14,6 +14,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { verifyWebhook } from '@clerk/express/webhooks';
 
 import { UserResponseDto } from './dto/UserResponse.dto.js';
 import { UserNotFoundDto } from './dto/UserNotFound.dto.js';
@@ -46,10 +47,9 @@ export class UserController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Create user using clerk middleware' })
   @ApiCreatedResponse({ description: 'User created' })
   async signUp(@Req() req: Request) {
-    await this.createUserUseCase.execute(req.user);
+    const event = await verifyWebhook(req);
   }
 }
