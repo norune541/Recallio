@@ -21,10 +21,10 @@ export class UserDao {
     });
   }
 
-  async findUserByClerkId(id: string): Promise<UserDto | null> {
+  async findUserByEmail(email: string): Promise<UserDto | null> {
     return await this.prisma.user.findUnique({
       where: {
-        clerkUserId: id,
+        email: [email],
       },
       select: {
         clerkUserId: true,

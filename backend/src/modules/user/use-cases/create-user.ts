@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UserDao } from '../user.dao.js';
 import type { CreateUserInput } from '../dto/CreateUserInput.dto.js';
 
@@ -7,9 +7,11 @@ export class CreateUserUseCase {
   constructor(private readonly userDao: UserDao) {}
 
   async execute(input: CreateUserInput) {
-    const existingUser = await this.userDao.findUserByClerkId(input.id);
+    const existingUser = await this.userDao.findUserByEmail(
+      input.emailAddresses[0].emailAddress,
+    );
     if (existingUser) {
-      throw new ConflictException('User already exists');
+      return;
     }
     await this.userDao.createUser(input);
   }
