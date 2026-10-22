@@ -13,6 +13,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 
+import { SignOutDialog } from './SignOutDialog';
+
 function AccountSettings() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { openUserProfile } = useClerk();
@@ -40,15 +42,21 @@ function AccountSettings() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
-            <UserRound className="size-5" />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+              <UserRound className="size-5" />
+            </div>
+
+            <div>
+              <CardTitle>Account</CardTitle>
+              <CardDescription>
+                Manage your account information.
+              </CardDescription>
+            </div>
           </div>
 
-          <div>
-            <CardTitle>Account</CardTitle>
-            <CardDescription>Manage your account information.</CardDescription>
-          </div>
+          <SignOutDialog />
         </div>
       </CardHeader>
 

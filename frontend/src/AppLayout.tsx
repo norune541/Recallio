@@ -28,6 +28,7 @@ import {
   SidebarProvider,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { UserButton } from '@clerk/react';
 
 import logo from './public/logo.svg';
 
@@ -85,12 +86,6 @@ function AppLayoutContent() {
   const handleConnectStore = () => {
     toast.info('Coming soon', {
       description: 'Shopify integration is not available yet.',
-    });
-  };
-
-  const handleSettings = () => {
-    toast.info('Coming soon', {
-      description: 'Workspace settings are not available yet.',
     });
   };
 
@@ -178,10 +173,7 @@ function AppLayoutContent() {
             </div>
           </div>
 
-          <Button variant="outline" size="sm" onClick={handleSettings}>
-            <Settings2 className="size-4 sm:mr-2" />
-            <span className="hidden sm:inline">Settings</span>
-          </Button>
+          <UserButton />
         </header>
 
         <main className="flex min-w-0 flex-1 flex-col">
