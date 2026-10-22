@@ -9,13 +9,23 @@ export class UserDao {
   constructor(private readonly prisma: PrismaService) {}
 
   async createUser(input: CreateUserInput): Promise<UserDto> {
-    return await this.prisma.user.create({
-      data: {
+    return await this.prisma.user.upsert({
+      where: {
+        email: input.email,
+      },
+      update: {
         clerkUserId: input.id,
         firstName: input.firstName,
         lastName: input.lastName,
         username: input.username,
+        imageUrl: input.imageUrl,
+      },
+      create: {
         email: input.email,
+        clerkUserId: input.id,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        username: input.username,
         imageUrl: input.imageUrl,
       },
     });

@@ -7,10 +7,6 @@ export class CreateUserUseCase {
   constructor(private readonly userDao: UserDao) {}
 
   async execute(input: CreateUserInput) {
-    const existingUser = await this.userDao.findUserByEmail(input.email);
-    if (existingUser) {
-      return;
-    }
     await this.userDao.createUser(input);
   }
 }
