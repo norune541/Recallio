@@ -14,16 +14,16 @@ export class BeginShopifyAuthUseCase {
     private readonly shopifyOAuthUtils: ShopifyOAuthUtils,
   ) {}
 
-  /** Starts OAuth for a Clerk-authenticated user. Pass req.user.id, not the DB UUID. */
+  /** Starts OAuth for a Clerk-authenticated user.*/
   async execute(
-    clerkUserId: string,
+    email: string,
     shopDomainInput: string | undefined,
   ): Promise<string> {
     const shopDomain = this.shopifyOAuthUtils
       .validateShopDomain(shopDomainInput)
       .toLowerCase();
 
-    const user = await this.shopifyDao.findUserIdByClerkUserId(clerkUserId);
+    const user = await this.shopifyDao.findUserIdByEmail(email);
     if (!user) {
       throw new NotFoundException(
         'The signed-in Clerk user does not exist in Recallio yet.',

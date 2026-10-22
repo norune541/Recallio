@@ -17,7 +17,6 @@ export function SignupPage() {
             },
           }}
           signInUrl="/login"
-          forceRedirectUrl="/post-auth"
           fallback={
             <div className="flex min-h-80 items-center justify-center">
               <SlidingSquaresLoader />

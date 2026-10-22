@@ -5,9 +5,9 @@ import { PrismaService } from '../../../prisma/prisma.service.js';
 export class ShopifyDao {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findUserIdByClerkUserId(clerkUserId: string) {
+  async findUserIdByEmail(email: string) {
     return await this.prisma.user.findUnique({
-      where: { clerkUserId },
+      where: { email },
       select: { id: true },
     });
   }

@@ -9,22 +9,32 @@ export class UserDao {
   constructor(private readonly prisma: PrismaService) {}
 
   async createUser(input: CreateUserInput): Promise<UserDto> {
-    return await this.prisma.user.create({
-      data: {
+    return await this.prisma.user.upsert({
+      where: {
+        email: input.email,
+      },
+      update: {
         clerkUserId: input.id,
         firstName: input.firstName,
         lastName: input.lastName,
         username: input.username,
-        email: input.emailAddresses.map((item) => item.emailAddress),
+        imageUrl: input.imageUrl,
+      },
+      create: {
+        email: input.email,
+        clerkUserId: input.id,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        username: input.username,
         imageUrl: input.imageUrl,
       },
     });
   }
 
-  async findUserByClerkId(id: string): Promise<UserDto | null> {
+  async findUserByEmail(email: string): Promise<UserDto | null> {
     return await this.prisma.user.findUnique({
       where: {
-        clerkUserId: id,
+        email,
       },
       select: {
         clerkUserId: true,
@@ -34,6 +44,14 @@ export class UserDao {
         email: true,
         createdAt: true,
         updatedAt: true,
+      },
+    });
+  }
+
+  async deleteUser(clerkUserId: string): Promise<void> {
+    await this.prisma.user.deleteMany({
+      where: {
+        clerkUserId,
       },
     });
   }

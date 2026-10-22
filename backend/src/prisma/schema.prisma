@@ -38,7 +38,7 @@ model User {
   lastName    String?
   username    String?  @unique
   clerkUserId String   @unique
-  email       String[] @unique
+  email       String   @unique
   imageUrl    String
 
   shopMemberships ShopMember[]

@@ -20,24 +20,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get user from DB */
-        get: operations["UserController_getProfile"];
-        put?: never;
-        /** Create user using clerk middleware */
-        post: operations["UserController_signUp"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/integrations/shopify/connect": {
         parameters: {
             query?: never;
@@ -106,75 +88,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/webhooks/clerk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Handle Clerk webhooks */
+        post: operations["ClerkController_handleWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        UserResponseDto: {
-            /**
-             * @description Clerk user id
-             * @example user_2abc123
-             */
-            clerkUserId: string;
-            /**
-             * @description First name
-             * @example John
-             */
-            firstName: Record<string, never>;
-            /**
-             * @description Last name
-             * @example Doe
-             */
-            lastName: Record<string, never>;
-            /**
-             * @description Username
-             * @example john_doe
-             */
-            username: Record<string, never>;
-            /**
-             * @description Email adresses of the user
-             * @example [
-             *       "johndoe@example.com"
-             *     ]
-             */
-            email: string[];
-            /**
-             * Format: date-time
-             * @description Creation timestamp
-             * @example 2024-01-15T10:30:00Z
-             */
-            createdAt: string;
-            /**
-             * Format: date-time
-             * @description Last update timestamp
-             * @example 2024-01-20T12:00:00Z
-             */
-            updatedAt: string;
-        };
-        UserNotFoundDto: {
-            /**
-             * @description HTTP status code
-             * @example 404
-             * @enum {number}
-             */
-            statusCode: 404;
-            /**
-             * @description Machine-readable error code
-             * @example USER_NOT_FOUND
-             * @enum {string}
-             */
-            code: "USER_NOT_FOUND";
-            /**
-             * @description Human-readable error code
-             * @example User not found
-             */
-            message: string;
-            /**
-             * @description HTTP status text
-             * @example Not Found
-             */
-            error: string;
-        };
         ShopifyCallbackResponseDto: {
             /**
              * @description Success message returned after connecting the store
@@ -203,6 +137,30 @@ export interface components {
             /**
              * @description Human-readable error code
              * @example Shop not found
+             */
+            message: string;
+            /**
+             * @description HTTP status text
+             * @example Not Found
+             */
+            error: string;
+        };
+        UserNotFoundDto: {
+            /**
+             * @description HTTP status code
+             * @example 404
+             * @enum {number}
+             */
+            statusCode: 404;
+            /**
+             * @description Machine-readable error code
+             * @example USER_NOT_FOUND
+             * @enum {string}
+             */
+            code: "USER_NOT_FOUND";
+            /**
+             * @description Human-readable error code
+             * @example User not found
              */
             message: string;
             /**
@@ -620,52 +578,6 @@ export interface operations {
             };
         };
     };
-    UserController_getProfile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserResponseDto"];
-                };
-            };
-            /** @description User not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserNotFoundDto"];
-                };
-            };
-        };
-    };
-    UserController_signUp: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description User created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     ShopifyController_connect: {
         parameters: {
             query: {
@@ -791,6 +703,24 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ShopifyShopBadGatewayErrorDto"];
                 };
+            };
+        };
+    };
+    ClerkController_handleWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Webhook processed successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

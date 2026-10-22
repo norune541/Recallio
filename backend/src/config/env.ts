@@ -17,6 +17,9 @@ const envSchema = z.object({
     .string()
     .trim()
     .min(1, 'CLERK_PUBLISHABLE_KEY is required'),
+  CLERK_WEBHOOK_SIGNING_SECRET: z
+    .string()
+    .min(1, 'CLERK_WEBHOOK_SIGNING_SECRET required'),
 
   SHOPIFY_CLIENT_ID: z.string().min(1, 'SHOPIFY_CLIENT_ID is required'),
   SHOPIFY_CLIENT_SECRET: z.string().min(1, 'SHOPIFY_CLIENT_SECRET is required'),
