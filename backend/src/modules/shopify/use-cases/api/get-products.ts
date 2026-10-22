@@ -93,13 +93,13 @@ const PRODUCTS_QUERY = `#graphql
  *
  * @remarks
  * The method performs the following steps:
- * 1. Finds the internal user record using the Clerk user ID.
+ * 1. Finds the internal user record using the user's email.
  * 2. Retrieves the shop associated with the user.
  * 3. Obtains a valid Shopify access token.
  * 4. Creates a Shopify GraphQL client.
  * 5. Fetches the first 10 products, sorted alphabetically by title.
  *
- * @param clerkUserId - The user's Clerk ID provided by ClerkAuthGuard.
+ * @param email - The user's email.
  * @returns A list of Shopify products, or an empty array if no products are found.
  * @throws NotFoundException If the user or their associated shop is not found.
  * @throws BadGatewayException If Shopify returns a network or GraphQL error.
@@ -111,8 +111,8 @@ export class GetProductsUseCase {
     private readonly getValidToken: GetValidShopifyAccessTokenUseCase,
   ) {}
 
-  async execute(clerkUserId: string): Promise<ShopifyProductNode[]> {
-    const user = await this.shopifyDao.findUserIdByClerkUserId(clerkUserId);
+  async execute(email: string): Promise<ShopifyProductNode[]> {
+    const user = await this.shopifyDao.findUserIdByEmail(email);
 
     if (!user) {
       throw new UserNotFoundException();

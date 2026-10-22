@@ -64,7 +64,10 @@ export class ShopifyController {
     @Req() req: Request,
     @Query('shop') shop: string | undefined,
   ): Promise<ShopifyConnectResponseDto> {
-    const url = await this.beginShopifyAuth.execute(req.user.id, shop);
+    const url = await this.beginShopifyAuth.execute(
+      req.user.emailAddresses[0].emailAddress,
+      shop,
+    );
     return { url };
   }
 
@@ -125,7 +128,9 @@ export class ShopifyController {
   })
   @ApiBadGatewayResponse({ type: ShopifyShopBadGatewayErrorDto })
   async getProducts(@Req() req: Request): Promise<ShopifyProductDto[]> {
-    return await this.getProductsUseCase.execute(req.user.id);
+    return await this.getProductsUseCase.execute(
+      req.user.emailAddresses[0].emailAddress,
+    );
   }
 
   @Get('shop')
@@ -145,6 +150,8 @@ export class ShopifyController {
     schema: { oneOf: refs(ShopNotFoundDto, UserNotFoundDto) },
   })
   async getShop(@Req() req: Request): Promise<ShopifyShopDto> {
-    return await this.getShopUseCase.execute(req.user.id);
+    return await this.getShopUseCase.execute(
+      req.user.emailAddresses[0].emailAddress,
+    );
   }
 }

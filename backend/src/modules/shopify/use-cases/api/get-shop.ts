@@ -49,8 +49,8 @@ export class GetShopUseCase {
     private readonly getValidToken: GetValidShopifyAccessTokenUseCase,
   ) {}
 
-  async execute(clerkUserId: string): Promise<ShopifyShopDto> {
-    const user = await this.shopifyDao.findUserIdByClerkUserId(clerkUserId);
+  async execute(email: string): Promise<ShopifyShopDto> {
+    const user = await this.shopifyDao.findUserIdByEmail(email);
     if (!user) {
       throw new UserNotFoundException();
     }
