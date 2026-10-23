@@ -157,6 +157,15 @@ export class ShopifyDao {
     });
   }
 
+  async removeUserMemebership(shopId: string, userId: string) {
+    return await this.prisma.shopMember.deleteMany({
+      where: {
+        userId,
+        shopId,
+      },
+    });
+  }
+
   async markShopDisconnected(shopDomain: string) {
     return await this.prisma.shopifyShop.updateMany({
       where: { shopDomain },

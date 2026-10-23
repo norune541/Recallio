@@ -1,4 +1,14 @@
-import { Controller, Get, Query, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Query,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiOperation,
   ApiQuery,
@@ -29,6 +39,7 @@ import { BeginShopifyAuthUseCase } from './use-cases/auth/begin-shopify-auth.use
 import { CompleteShopifyAuthUseCase } from './use-cases/auth/complete-shopify-auth.use-case.js';
 import { GetProductsUseCase } from './use-cases/api/get-products.js';
 import { GetShopUseCase } from './use-cases/api/get-shop.js';
+import { DeleteShopifyMembershipUseCase } from './use-cases/membership/delete-shopify-membership.use-case.js';
 import type { Request, Response } from 'express';
 
 @ApiTags('Shopify')
@@ -39,6 +50,7 @@ export class ShopifyController {
     private readonly completeShopifyAuth: CompleteShopifyAuthUseCase,
     private readonly getProductsUseCase: GetProductsUseCase,
     private readonly getShopUseCase: GetShopUseCase,
+    private readonly deleteMembershipUseCase: DeleteShopifyMembershipUseCase,
   ) {}
 
   /**
@@ -151,6 +163,27 @@ export class ShopifyController {
   })
   async getShop(@Req() req: Request): Promise<ShopifyShopDto> {
     return await this.getShopUseCase.execute(
+      req.user.emailAddresses[0].emailAddress,
+    );
+  }
+
+  @Delete()
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({
+    summary: 'Remove the current user from the Shopify shop',
+  })
+  @ApiResponse({
+    status: 204,
+    description: 'Shop membership successfully deleted.',
+  })
+  @ApiExtraModels(ShopNotFoundDto, UserNotFoundDto)
+  @ApiNotFoundResponse({
+    description: 'Shop or user not found (see `code`)',
+    schema: { oneOf: refs(ShopNotFoundDto, UserNotFoundDto) },
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteMembership(@Req() req: Request) {
+    return await this.deleteMembershipUseCase.execute(
       req.user.emailAddresses[0].emailAddress,
     );
   }
