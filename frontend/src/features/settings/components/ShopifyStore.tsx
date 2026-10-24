@@ -168,7 +168,8 @@ export function ShopifyStore() {
             </div>
           )}
           {isMobile && (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 justify-between">
+              <Badge>Connected</Badge>
               <RemoveMembershipDialog />
             </div>
           )}

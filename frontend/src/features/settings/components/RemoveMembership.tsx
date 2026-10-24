@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TriangleAlert, AlertCircle, Loader2, Trash2 } from 'lucide-react';
+import { AlertCircle, Loader2, TriangleAlert, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -51,11 +51,11 @@ export function RemoveMembershipDialog() {
         <Button
           variant="outline"
           size="sm"
-          className="h-8 gap-2 text-destructive hover:text-destructive"
+          className="gap-2 text-destructive hover:text-destructive"
           disabled={isPending}
         >
           <Trash2 className="size-4" />
-          Remove store
+          Disconnect shop
         </Button>
       </DialogTrigger>
 
@@ -67,14 +67,14 @@ export function RemoveMembershipDialog() {
             </div>
           </div>
 
-          <div className="space-y-2 mt-4">
+          <div className="space-y-2">
             <DialogTitle className="text-lg">
-              Remove Shopify integration?
+              Remove store connection?
             </DialogTitle>
 
             <DialogDescription className="text-sm leading-relaxed">
-              This will disconnect your Shopify store from Recallio. You’ll need
-              to reconnect your store to resume syncing conversations.
+              This will disconnect your Recallio account from this Shopify
+              store. You can reconnect it later to resume syncing conversations.
             </DialogDescription>
           </div>
         </DialogHeader>
@@ -84,8 +84,9 @@ export function RemoveMembershipDialog() {
             <AlertCircle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
 
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Your Recallio account will not be deleted. Only the Shopify
-              integration will be removed.
+              This only removes the connection between your account and the
+              store. The Shopify store itself and your Recallio account will not
+              be deleted.
             </p>
           </div>
         </div>

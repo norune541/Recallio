@@ -1,7 +1,6 @@
 import { useClerk, useUser } from '@clerk/react';
 import { UserRound } from 'lucide-react';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -65,16 +64,10 @@ function AccountSettings() {
       <CardContent className="space-y-2">
         <Label>Account information</Label>
 
-        <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between mb-4">
+        <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           {accountInfo}
 
-          <div className="flex shrink-0 items-center gap-3">
-            {isLoaded && isSignedIn && (
-              <Badge className="border-transparent bg-primary text-primary-foreground hover:bg-primary/90">
-                Active
-              </Badge>
-            )}
-
+          <div className="mt-4 flex shrink-0 items-center gap-3 justify-between">
             <Button
               variant="outline"
               size="sm"
@@ -83,9 +76,10 @@ function AccountSettings() {
             >
               Manage account
             </Button>
+
+            {isMobile && <SignOutDialog />}
           </div>
         </div>
-        {isMobile && <SignOutDialog />}
       </CardContent>
     </Card>
   );
