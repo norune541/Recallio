@@ -14,10 +14,12 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { SignOutDialog } from './SignOutDialog';
+import { useIsMobile } from '@/common/hooks/use-mobile';
 
 function AccountSettings() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { openUserProfile } = useClerk();
+  const isMobile = useIsMobile();
 
   const username = user?.username;
   const email = user?.primaryEmailAddress?.emailAddress;
@@ -56,14 +58,14 @@ function AccountSettings() {
             </div>
           </div>
 
-          <SignOutDialog />
+          {!isMobile && <SignOutDialog />}
         </div>
       </CardHeader>
 
       <CardContent className="space-y-2">
         <Label>Account information</Label>
 
-        <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between mb-4">
           {accountInfo}
 
           <div className="flex shrink-0 items-center gap-3">
@@ -83,6 +85,7 @@ function AccountSettings() {
             </Button>
           </div>
         </div>
+        {isMobile && <SignOutDialog />}
       </CardContent>
     </Card>
   );
