@@ -1,7 +1,6 @@
 import { useClerk, useUser } from '@clerk/react';
 import { UserRound } from 'lucide-react';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -14,10 +13,12 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { SignOutDialog } from './SignOutDialog';
+import { useIsMobile } from '@/common/hooks/use-mobile';
 
 function AccountSettings() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { openUserProfile } = useClerk();
+  const isMobile = useIsMobile();
 
   const username = user?.username;
   const email = user?.primaryEmailAddress?.emailAddress;
@@ -56,23 +57,17 @@ function AccountSettings() {
             </div>
           </div>
 
-          <SignOutDialog />
+          {!isMobile && <SignOutDialog />}
         </div>
       </CardHeader>
 
       <CardContent className="space-y-2">
         <Label>Account information</Label>
 
-        <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           {accountInfo}
 
-          <div className="flex shrink-0 items-center gap-3">
-            {isLoaded && isSignedIn && (
-              <Badge className="border-transparent bg-primary text-primary-foreground hover:bg-primary/90">
-                Active
-              </Badge>
-            )}
-
+          <div className="mt-4 flex shrink-0 items-center gap-3 justify-between">
             <Button
               variant="outline"
               size="sm"
@@ -81,6 +76,8 @@ function AccountSettings() {
             >
               Manage account
             </Button>
+
+            {isMobile && <SignOutDialog />}
           </div>
         </div>
       </CardContent>

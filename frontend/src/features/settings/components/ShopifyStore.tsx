@@ -14,6 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
+import { RemoveMembershipDialog } from './RemoveMembership';
+
 import { useIsMobile } from '@/common/hooks/use-mobile';
 import { useShopify } from '../hooks/getShopify';
 import { useConnectShopify } from '../hooks/connectShopify';
@@ -115,7 +117,7 @@ export function ShopifyStore() {
               </CardDescription>
             </div>
 
-            {isMobile ? null : <Badge variant="default">Connected</Badge>}
+            {!isMobile && <RemoveMembershipDialog />}
           </div>
         </CardHeader>
 
@@ -165,13 +167,12 @@ export function ShopifyStore() {
               </p>
             </div>
           )}
-
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary">
-              {data.plan.shopifyPlus ? 'Shopify Plus' : data.plan.displayName}
-            </Badge>
-            {isMobile ? <Badge variant="default">Connected</Badge> : null}
-          </div>
+          {isMobile && (
+            <div className="flex flex-wrap items-center gap-2 justify-between">
+              <Badge>Connected</Badge>
+              <RemoveMembershipDialog />
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -339,6 +340,37 @@ export function ShopifyStore() {
               </form>
             </DialogContent>
           </Dialog>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+              <AlertCircle className="size-5 text-destructive" />
+            </div>
+
+            <div>
+              <CardTitle>Something went wrong</CardTitle>
+              <CardDescription>An unexpected error occurred.</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-5">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Unexpected error</p>
+            <p className="text-sm text-muted-foreground">
+              We couldn't load your Shopify store information. Please try again
+              later. If the problem persists, contact support.
+            </p>
+          </div>
+
+          <Button onClick={() => window.location.reload()}>Try again</Button>
         </CardContent>
       </Card>
     );
