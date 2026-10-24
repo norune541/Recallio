@@ -9,6 +9,10 @@ generator client {
   moduleFormat = "cjs"
 }
 
+generator erd {
+  provider = "prisma-erd-generator"
+}
+
 datasource db {
   provider = "postgresql"
 }

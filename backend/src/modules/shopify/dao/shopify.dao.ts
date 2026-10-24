@@ -157,15 +157,16 @@ export class ShopifyDao {
     });
   }
 
-  async removeUserMemebership(shopId: string, userId: string) {
-    return await this.prisma.shopMember.deleteMany({
+  async removeUserMembership(shopId: string, userId: string): Promise<void> {
+    await this.prisma.shopMember.delete({
       where: {
-        userId,
-        shopId,
+        shopId_userId: {
+          shopId,
+          userId,
+        },
       },
     });
   }
-
   async markShopDisconnected(shopDomain: string) {
     return await this.prisma.shopifyShop.updateMany({
       where: { shopDomain },
@@ -199,5 +200,33 @@ export class ShopifyDao {
     });
 
     return membership?.shop ?? null;
+  }
+
+  async findMembers(shopId: string, userId: string) {
+    return await this.prisma.shopMember.findMany({
+      where: {
+        shopId,
+        userId: {
+          not: userId,
+        },
+      },
+      select: {
+        userId: true,
+        role: true,
+      },
+    });
+  }
+
+  async findRole(userId: string, shopId: string) {
+    const member = await this.prisma.shopMember.findUnique({
+      where: {
+        shopId_userId: { shopId, userId },
+      },
+      select: {
+        role: true,
+      },
+    });
+
+    return member?.role ?? null;
   }
 }

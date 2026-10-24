@@ -88,6 +88,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/integrations/shopify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove the current user from the Shopify shop */
+        delete: operations["ShopifyController_deleteMembership"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/webhooks/clerk": {
         parameters: {
             query?: never;
@@ -702,6 +719,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ShopifyShopBadGatewayErrorDto"];
+                };
+            };
+        };
+    };
+    ShopifyController_deleteMembership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Shop membership successfully deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The shop owner cannot leave while other members remain. Ownership must be transferred first. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Shop or user not found (see `code`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShopNotFoundDto"] | components["schemas"]["UserNotFoundDto"];
                 };
             };
         };

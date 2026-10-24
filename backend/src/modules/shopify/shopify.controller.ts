@@ -18,6 +18,7 @@ import {
   ApiBadGatewayResponse,
   ApiExtraModels,
   refs,
+  ApiBadRequestResponse,
 } from '@nestjs/swagger';
 
 import { ClerkAuthGuard } from '../../common/clerk-auth.guard.js';
@@ -181,9 +182,13 @@ export class ShopifyController {
     description: 'Shop or user not found (see `code`)',
     schema: { oneOf: refs(ShopNotFoundDto, UserNotFoundDto) },
   })
+  @ApiBadRequestResponse({
+    description:
+      'The shop owner cannot leave while other members remain. Ownership must be transferred first.',
+  })
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteMembership(@Req() req: Request) {
-    return await this.deleteMembershipUseCase.execute(
+    await this.deleteMembershipUseCase.execute(
       req.user.emailAddresses[0].emailAddress,
     );
   }

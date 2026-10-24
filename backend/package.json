@@ -14,11 +14,9 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint ./src",
-    "test": "vitest run",
+    "test": "dotenv run -f .env.test -- vitest run",
     "test:watch": "vitest",
-    "test:cov": "vitest run --coverage",
-    "test:debug": "vitest --inspect-brk --no-file-parallelism",
-    "test:e2e": "vitest run --config ./vitest.config.e2e.ts"
+    "db:test:migrate": "dotenv run -f .env.test -- bunx prisma migrate deploy"
   },
   "dependencies": {
     "@clerk/express": "^2.1.78",
@@ -41,24 +39,29 @@
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
-    "typescript-eslint": "^8.71.2",
     "@eslint/js": "^10.0.1",
+    "@mermaid-js/mermaid-cli": "^12.0.0",
     "@nestjs/cli": "^12.0.0",
     "@nestjs/mau": "^0.2.6",
     "@nestjs/schematics": "^12.0.0",
     "@nestjs/testing": "^12.0.1",
+    "@swc/core": "^1.16.20",
     "@types/express": "^5.0.0",
     "@types/node": "^24.0.0",
     "@types/supertest": "^7.0.0",
-    "@vitest/coverage-v8": "^4.1.2",
+    "@vitest/coverage-v8": "^5.0.5",
     "eslint": "^10.13.0",
     "prettier": "^3.4.2",
     "prisma": "7",
+    "prisma-erd-generator": "^3.2.1",
+    "puppeteer": "^25.16.0",
     "source-map-support": "^0.5.21",
     "supertest": "^7.0.0",
     "typescript": "^6.0.2",
+    "typescript-eslint": "^8.71.2",
+    "unplugin-swc": "^2.0.0",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.1.2",
+    "vitest": "^5.0.5",
     "zod-openapi": "^6.0.2"
   }
 }
