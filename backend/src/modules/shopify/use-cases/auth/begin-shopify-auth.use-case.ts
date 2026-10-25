@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
 import { env } from '../../../../config/env.js';
 import { ShopifyDao } from '../../dao/shopify.dao.js';
@@ -28,6 +32,11 @@ export class BeginShopifyAuthUseCase {
       throw new NotFoundException(
         'The signed-in Clerk user does not exist in Recallio yet.',
       );
+    }
+
+    const shop = await this.shopifyDao.findShopByDomain(shopDomain);
+    if (shop) {
+      throw new BadRequestException('Shop already exists');
     }
 
     // Only the hash is stored in the database; the raw state is sent to Shopify.

@@ -1,11 +1,15 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 
 import { ShopifyDao } from '../../dao/shopify.dao.js';
 import { UserNotFoundException } from 'backend/src/modules/user/dto/UserNotFound.dto.js';
 import { ShopNotFoundException } from '../../dto/shop-notFound.dto.js';
 
 @Injectable()
-export class DeleteShopifyMembershipUseCase {
+export class DeleteShop {
   constructor(private readonly shopifyDao: ShopifyDao) {}
 
   async execute(email: string) {
@@ -18,12 +22,16 @@ export class DeleteShopifyMembershipUseCase {
     const role = await this.shopifyDao.findRole(user.id, shop.id);
     const members = await this.shopifyDao.findMembers(shop.id, user.id);
 
+    if (role !== 'OWNER') {
+      throw new ForbiddenException('Only the shop owner can delete the shop.');
+    }
+
     if (role === 'OWNER' && members.length > 0) {
       throw new BadRequestException(
         'Owner cannot leave the shop while other members remain. Transfer ownership first.',
       );
     }
 
-    await this.shopifyDao.removeUserMembership(shop.id, user.id);
+    await this.shopifyDao.removeShop(shop.shopDomain);
   }
 }

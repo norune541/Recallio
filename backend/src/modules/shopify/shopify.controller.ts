@@ -1,6 +1,7 @@
 import {
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -19,6 +20,9 @@ import {
   ApiExtraModels,
   refs,
   ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiOkResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import { ClerkAuthGuard } from '../../common/clerk-auth.guard.js';
@@ -40,7 +44,7 @@ import { BeginShopifyAuthUseCase } from './use-cases/auth/begin-shopify-auth.use
 import { CompleteShopifyAuthUseCase } from './use-cases/auth/complete-shopify-auth.use-case.js';
 import { GetProductsUseCase } from './use-cases/api/get-products.js';
 import { GetShopUseCase } from './use-cases/api/get-shop.js';
-import { DeleteShopifyMembershipUseCase } from './use-cases/membership/delete-shopify-membership.use-case.js';
+import { DeleteShop } from './use-cases/shop/delete-shopify-membership.use-case.js';
 import type { Request, Response } from 'express';
 
 @ApiTags('Shopify')
@@ -51,7 +55,7 @@ export class ShopifyController {
     private readonly completeShopifyAuth: CompleteShopifyAuthUseCase,
     private readonly getProductsUseCase: GetProductsUseCase,
     private readonly getShopUseCase: GetShopUseCase,
-    private readonly deleteMembershipUseCase: DeleteShopifyMembershipUseCase,
+    private readonly deleteShop: DeleteShop,
   ) {}
 
   /**
@@ -69,9 +73,12 @@ export class ShopifyController {
     type: String,
     description: 'Shop domain to connect, e.g. example.myshopify.com',
   })
-  @ApiResponse({
-    status: 302,
+  @ApiOkResponse({
     description: 'Redirect to Shopify authorization page',
+    type: ShopifyConnectResponseDto,
+  })
+  @ApiConflictResponse({
+    description: 'Shop already exists',
   })
   async connect(
     @Req() req: Request,
@@ -157,6 +164,7 @@ export class ShopifyController {
     type: ShopifyShopDto,
   })
   @ApiBadGatewayResponse({ type: ShopifyShopBadGatewayErrorDto })
+  @ApiForbiddenResponse({ type: ForbiddenException })
   @ApiExtraModels(ShopNotFoundDto, UserNotFoundDto)
   @ApiNotFoundResponse({
     description: 'Shop or user not found (see `code`)',
@@ -171,11 +179,11 @@ export class ShopifyController {
   @Delete()
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({
-    summary: 'Remove the current user from the Shopify shop',
+    summary: 'Disconnect and delete the Shopify shop',
   })
   @ApiResponse({
     status: 204,
-    description: 'Shop membership successfully deleted.',
+    description: 'Shop successfully deleted.',
   })
   @ApiExtraModels(ShopNotFoundDto, UserNotFoundDto)
   @ApiNotFoundResponse({
@@ -188,8 +196,6 @@ export class ShopifyController {
   })
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteMembership(@Req() req: Request) {
-    await this.deleteMembershipUseCase.execute(
-      req.user.emailAddresses[0].emailAddress,
-    );
+    await this.deleteShop.execute(req.user.emailAddresses[0].emailAddress);
   }
 }
