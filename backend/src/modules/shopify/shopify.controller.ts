@@ -44,7 +44,7 @@ import { BeginShopifyAuthUseCase } from './use-cases/auth/begin-shopify-auth.use
 import { CompleteShopifyAuthUseCase } from './use-cases/auth/complete-shopify-auth.use-case.js';
 import { GetProductsUseCase } from './use-cases/api/get-products.js';
 import { GetShopUseCase } from './use-cases/api/get-shop.js';
-import { DeleteShop } from './use-cases/shop/delete-shopify-membership.use-case.js';
+import { DeleteShop } from './use-cases/shop/delete-shop.use-case.js';
 import type { Request, Response } from 'express';
 
 @ApiTags('Shopify')

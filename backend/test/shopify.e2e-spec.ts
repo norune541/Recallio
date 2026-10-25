@@ -5,7 +5,7 @@ import request from 'supertest';
 import { PrismaService } from 'backend/src/prisma/prisma.service.js';
 import { ShopifyDao } from 'backend/src/modules/shopify/dao/shopify.dao.js';
 
-import { DeleteShopifyMembershipUseCase } from 'backend/src/modules/shopify/use-cases/membership/delete-shopify-membership.use-case.js';
+import { DeleteShop } from 'backend/src/modules/shopify/use-cases/shop/delete-shop.use-case.js';
 import { BeginShopifyAuthUseCase } from 'backend/src/modules/shopify/use-cases/auth/begin-shopify-auth.use-case.js';
 import { CompleteShopifyAuthUseCase } from 'backend/src/modules/shopify/use-cases/auth/complete-shopify-auth.use-case.js';
 import { GetProductsUseCase } from 'backend/src/modules/shopify/use-cases/api/get-products.js';
@@ -22,9 +22,26 @@ describe('DELETE /api/integrations/shopify', () => {
 
   const testEmail = 'shopify-e2e@example.com';
   const clerkUserId = 'clerk_shopify_e2e_test';
+  const otherEmail = 'shopify-other-e2e@example.com';
+  const otherClerkUserId = 'clerk_shopify_other_test';
+  const shopDomain = 'shopify-e2e-test.myshopify.com';
 
   let userId: string;
+  let otherUserId: string;
   let shopId: string;
+
+  const cleanupShop = async () => {
+    const shops = await prisma.shopifyShop.findMany({
+      where: { shopDomain },
+      select: { id: true },
+    });
+    const ids = shops.map((s) => s.id);
+
+    if (ids.length > 0) {
+      await prisma.shopMember.deleteMany({ where: { shopId: { in: ids } } });
+      await prisma.shopifyShop.deleteMany({ where: { id: { in: ids } } });
+    }
+  };
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -32,7 +49,7 @@ describe('DELETE /api/integrations/shopify', () => {
       providers: [
         PrismaService,
         ShopifyDao,
-        DeleteShopifyMembershipUseCase,
+        DeleteShop,
         {
           provide: BeginShopifyAuthUseCase,
           useValue: { execute: () => undefined },
@@ -83,9 +100,23 @@ describe('DELETE /api/integrations/shopify', () => {
     });
     userId = user.id;
 
+    const otherUser = await prisma.user.create({
+      data: {
+        clerkUserId: otherClerkUserId,
+        email: otherEmail,
+        imageUrl: '',
+      },
+    });
+    otherUserId = otherUser.id;
+  });
+
+  beforeEach(async () => {
+    // The shop is deleted by some tests, so recreate it from scratch every time.
+    await cleanupShop();
+
     const shop = await prisma.shopifyShop.create({
       data: {
-        shopDomain: 'shopify-e2e-test.myshopify.com',
+        shopDomain,
         status: 'CONNECTED',
       },
     });
@@ -93,55 +124,24 @@ describe('DELETE /api/integrations/shopify', () => {
 
     await prisma.shopMember.create({
       data: {
-        userId: user.id,
-        shopId: shop.id,
-      },
-    });
-  });
-
-  beforeEach(async () => {
-    // Restore membership before each test.
-    await prisma.shopMember.upsert({
-      where: {
-        shopId_userId: {
-          shopId,
-          userId,
-        },
-      },
-      update: {
-        role: 'MEMBER',
-      },
-      create: {
         shopId,
         userId,
-        role: 'MEMBER',
+        role: 'OWNER',
       },
     });
   });
 
   afterAll(async () => {
     if (prisma) {
+      await cleanupShop();
+
       await prisma.shopMember.deleteMany({
-        where: {
-          userId,
-        },
+        where: { userId: { in: [userId, otherUserId] } },
       });
 
-      if (shopId) {
-        await prisma.shopifyShop.deleteMany({
-          where: {
-            id: shopId,
-          },
-        });
-      }
-
-      if (userId) {
-        await prisma.user.deleteMany({
-          where: {
-            id: userId,
-          },
-        });
-      }
+      await prisma.user.deleteMany({
+        where: { id: { in: [userId, otherUserId] } },
+      });
 
       await prisma.$disconnect();
     }
@@ -151,17 +151,11 @@ describe('DELETE /api/integrations/shopify', () => {
     }
   });
 
-  it('should delete the current user membership', async () => {
-    const membership = await prisma.shopMember.findUnique({
-      where: {
-        shopId_userId: {
-          shopId,
-          userId,
-        },
-      },
+  it('should delete the shop if the user is the owner and no other members remain', async () => {
+    const shopBefore = await prisma.shopifyShop.findUnique({
+      where: { id: shopId },
     });
-
-    expect(membership).not.toBeNull();
+    expect(shopBefore).not.toBeNull();
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const response = await request(app.getHttpServer())
@@ -169,6 +163,11 @@ describe('DELETE /api/integrations/shopify', () => {
       .expect(204);
 
     expect(response.text).toBe('');
+
+    const shopAfter = await prisma.shopifyShop.findUnique({
+      where: { id: shopId },
+    });
+    expect(shopAfter).toBeNull();
 
     const membershipAfter = await prisma.shopMember.findUnique({
       where: {
@@ -178,74 +177,92 @@ describe('DELETE /api/integrations/shopify', () => {
         },
       },
     });
-
     expect(membershipAfter).toBeNull();
   });
 
-  it('should prevent the owner from leaving while other members remain', async () => {
-    const otherUser = await prisma.user.create({
+  it('should forbid deleting the shop if the user is not the owner', async () => {
+    await prisma.shopMember.update({
+      where: {
+        shopId_userId: {
+          shopId,
+          userId,
+        },
+      },
       data: {
-        clerkUserId: 'clerk_shopify_other_test',
-        email: 'shopify-other-e2e@example.com',
-        imageUrl: '',
+        role: 'MEMBER',
       },
     });
 
-    try {
-      await prisma.shopMember.update({
-        where: {
-          shopId_userId: {
-            shopId,
-            userId,
-          },
-        },
-        data: {
-          role: 'OWNER',
-        },
-      });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    const response = await request(app.getHttpServer())
+      .delete('/api/integrations/shopify')
+      .expect(403);
 
-      await prisma.shopMember.create({
-        data: {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(response.body.message).toBe(
+      'Only the shop owner can delete the shop.',
+    );
+
+    const shop = await prisma.shopifyShop.findUnique({
+      where: { id: shopId },
+    });
+    expect(shop).not.toBeNull();
+
+    const membership = await prisma.shopMember.findUnique({
+      where: {
+        shopId_userId: {
           shopId,
-          userId: otherUser.id,
-          role: 'MEMBER',
+          userId,
         },
-      });
+      },
+    });
+    expect(membership).not.toBeNull();
+    expect(membership?.role).toBe('MEMBER');
+  });
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const response = await request(app.getHttpServer())
-        .delete('/api/integrations/shopify')
-        .expect(400);
+  it('should prevent the owner from deleting the shop while other members remain', async () => {
+    await prisma.shopMember.create({
+      data: {
+        shopId,
+        userId: otherUserId,
+        role: 'MEMBER',
+      },
+    });
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      expect(response.body.message).toBe(
-        'Owner cannot leave the shop while other members remain. Transfer ownership first.',
-      );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    const response = await request(app.getHttpServer())
+      .delete('/api/integrations/shopify')
+      .expect(400);
 
-      const membership = await prisma.shopMember.findUnique({
-        where: {
-          shopId_userId: {
-            shopId,
-            userId,
-          },
-        },
-      });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(response.body.message).toBe(
+      'Owner cannot leave the shop while other members remain. Transfer ownership first.',
+    );
 
-      expect(membership).not.toBeNull();
-      expect(membership?.role).toBe('OWNER');
-    } finally {
-      await prisma.shopMember.deleteMany({
-        where: {
+    const shop = await prisma.shopifyShop.findUnique({
+      where: { id: shopId },
+    });
+    expect(shop).not.toBeNull();
+
+    const membership = await prisma.shopMember.findUnique({
+      where: {
+        shopId_userId: {
           shopId,
-          userId: otherUser.id,
+          userId,
         },
-      });
+      },
+    });
+    expect(membership).not.toBeNull();
+    expect(membership?.role).toBe('OWNER');
 
-      await prisma.user.delete({
-        where: {
-          id: otherUser.id,
+    const otherMembership = await prisma.shopMember.findUnique({
+      where: {
+        shopId_userId: {
+          shopId,
+          userId: otherUserId,
         },
-      });
-    }
+      },
+    });
+    expect(otherMembership).not.toBeNull();
   });
 });

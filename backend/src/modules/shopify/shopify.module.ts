@@ -10,7 +10,7 @@ import { GetValidShopifyAccessTokenUseCase } from './use-cases/auth/get-valid-sh
 import { RefreshShopifyAccessTokenUseCase } from './use-cases/auth/refresh-shopify-access-token.use-case.js';
 import { GetProductsUseCase } from './use-cases/api/get-products.js';
 import { GetShopUseCase } from './use-cases/api/get-shop.js';
-import { DeleteShop } from './use-cases/shop/delete-shopify-membership.use-case.js';
+import { DeleteShop } from './use-cases/shop/delete-shop.use-case.js';
 
 @Module({
   controllers: [ShopifyController],
