@@ -8,7 +8,7 @@ export function useConnectShopify() {
         '/api/integrations/shopify/connect',
         { params: { query: { shop: shopDomain } } },
       );
-      if (error) throw error;
+      if (error || !data) throw error ?? new Error('Empty response');
       return data;
     },
   });
