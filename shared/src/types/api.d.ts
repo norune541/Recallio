@@ -384,16 +384,6 @@ export interface components {
              */
             url: string;
             /**
-             * @description Shop owner email, used by Shopify to contact the owner
-             * @example owner@example.com
-             */
-            email: string;
-            /**
-             * @description Public contact email shown to customers
-             * @example support@example.com
-             */
-            contactEmail: string;
-            /**
              * @description Shop owner name
              * @example Jane Doe
              */
@@ -430,15 +420,6 @@ export interface components {
             primaryDomain: components["schemas"]["ShopifyShopPrimaryDomainDto"];
             /** @description Shopify billing plan of the shop */
             plan: components["schemas"]["ShopifyShopPlanDto"];
-            /**
-             * @description Countries the shop ships to (ISO 3166-1 alpha-2)
-             * @example [
-             *       "US",
-             *       "CA",
-             *       "DE"
-             *     ]
-             */
-            shipsToCountries: string[];
             /**
              * @description Whether the shop has outstanding setup steps
              * @example false

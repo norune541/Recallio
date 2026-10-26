@@ -134,11 +134,6 @@ export function ShopifyStore() {
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Email</p>
-              <p className="break-all text-sm font-medium">{data.email}</p>
-            </div>
-
-            <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Currency</p>
               <p className="text-sm font-medium">{data.currencyCode}</p>
             </div>
