@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
-import { RemoveMembershipDialog } from './RemoveMembership';
+import { RemoveStoreDialog } from './RemoveStore';
 
 import { useIsMobile } from '@/common/hooks/use-mobile';
 import { useShopify } from '../hooks/getShopify';
@@ -51,8 +51,8 @@ export function ShopifyStore() {
       onSuccess: ({ url }) => {
         window.location.href = url;
       },
-      onError: () => {
-        setFormError('Could not start the connection. Please try again.');
+      onError: (error) => {
+        setFormError(error.message);
       },
     });
   };
@@ -117,7 +117,7 @@ export function ShopifyStore() {
               </CardDescription>
             </div>
 
-            {!isMobile && <RemoveMembershipDialog />}
+            {!isMobile && <RemoveStoreDialog />}
           </div>
         </CardHeader>
 
@@ -131,11 +131,6 @@ export function ShopifyStore() {
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Plan</p>
               <p className="text-sm font-medium">{data.plan.displayName}</p>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Email</p>
-              <p className="break-all text-sm font-medium">{data.email}</p>
             </div>
 
             <div className="space-y-1">
@@ -170,7 +165,7 @@ export function ShopifyStore() {
           {isMobile && (
             <div className="flex flex-wrap items-center gap-2 justify-between">
               <Badge>Connected</Badge>
-              <RemoveMembershipDialog />
+              <RemoveStoreDialog />
             </div>
           )}
         </CardContent>

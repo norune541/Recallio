@@ -20,8 +20,6 @@ const SHOP_QUERY = `#graphql
       name
       myshopifyDomain
       url
-      email
-      contactEmail
       shopOwnerName
       currencyCode
       enabledPresentmentCurrencies
@@ -37,7 +35,6 @@ const SHOP_QUERY = `#graphql
         partnerDevelopment
         shopifyPlus
       }
-      shipsToCountries
       setupRequired
     }
   }

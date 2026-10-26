@@ -98,7 +98,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Remove the current user from the Shopify shop */
+        /** Disconnect and delete the Shopify shop */
         delete: operations["ShopifyController_deleteMembership"];
         options?: never;
         head?: never;
@@ -126,6 +126,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ShopifyConnectResponseDto: {
+            /**
+             * @description Shopify authorization URL to redirect the user to
+             * @example https://example.myshopify.com/admin/oauth/authorize?...
+             */
+            url: string;
+        };
         ShopifyCallbackResponseDto: {
             /**
              * @description Success message returned after connecting the store
@@ -377,16 +384,6 @@ export interface components {
              */
             url: string;
             /**
-             * @description Shop owner email, used by Shopify to contact the owner
-             * @example owner@example.com
-             */
-            email: string;
-            /**
-             * @description Public contact email shown to customers
-             * @example support@example.com
-             */
-            contactEmail: string;
-            /**
              * @description Shop owner name
              * @example Jane Doe
              */
@@ -424,20 +421,12 @@ export interface components {
             /** @description Shopify billing plan of the shop */
             plan: components["schemas"]["ShopifyShopPlanDto"];
             /**
-             * @description Countries the shop ships to (ISO 3166-1 alpha-2)
-             * @example [
-             *       "US",
-             *       "CA",
-             *       "DE"
-             *     ]
-             */
-            shipsToCountries: string[];
-            /**
              * @description Whether the shop has outstanding setup steps
              * @example false
              */
             setupRequired: boolean;
         };
+        ForbiddenException: Record<string, never>;
     };
     responses: never;
     parameters: never;
@@ -608,7 +597,16 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Redirect to Shopify authorization page */
-            302: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShopifyConnectResponseDto"];
+                };
+            };
+            /** @description Shop already exists */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -704,6 +702,14 @@ export interface operations {
                     "application/json": components["schemas"]["ShopifyShopDto"];
                 };
             };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForbiddenException"];
+                };
+            };
             /** @description Shop or user not found (see `code`) */
             404: {
                 headers: {
@@ -732,7 +738,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Shop membership successfully deleted. */
+            /** @description Shop successfully deleted. */
             204: {
                 headers: {
                     [name: string]: unknown;

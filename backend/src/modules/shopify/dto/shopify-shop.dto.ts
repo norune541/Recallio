@@ -56,18 +56,6 @@ export class ShopifyShopDto {
   })
   url!: string;
 
-  @ApiProperty({
-    description: 'Shop owner email, used by Shopify to contact the owner',
-    example: 'owner@example.com',
-  })
-  email!: string;
-
-  @ApiProperty({
-    description: 'Public contact email shown to customers',
-    example: 'support@example.com',
-  })
-  contactEmail!: string;
-
   @ApiProperty({ description: 'Shop owner name', example: 'Jane Doe' })
   shopOwnerName!: string;
 
@@ -113,13 +101,6 @@ export class ShopifyShopDto {
     type: () => ShopifyShopPlanDto,
   })
   plan!: ShopifyShopPlanDto;
-
-  @ApiProperty({
-    description: 'Countries the shop ships to (ISO 3166-1 alpha-2)',
-    type: [String],
-    example: ['US', 'CA', 'DE'],
-  })
-  shipsToCountries!: string[];
 
   @ApiProperty({
     description: 'Whether the shop has outstanding setup steps',

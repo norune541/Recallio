@@ -46,7 +46,6 @@ model User {
   imageUrl    String
 
   shopMemberships ShopMember[]
-  conversations   Conversation[]
   oauthAttempts   ShopifyOAuthAttempt[]
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
@@ -70,7 +69,6 @@ model ShopifyShop {
   uninstalledAt DateTime? @db.Timestamptz(3)
 
   members       ShopMember[]
-  conversations Conversation[]
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt
@@ -84,6 +82,8 @@ model ShopMember {
   shop ShopifyShop @relation(fields: [shopId], references: [id], onDelete: Cascade)
   user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  conversations Conversation[]
+
   joinedAt DateTime @default(now()) @db.Timestamptz(3)
 
   @@id([shopId, userId])
@@ -91,20 +91,18 @@ model ShopMember {
 
 model Conversation {
   id     String  @id @default(uuid()) @db.Uuid
-  userId String  @db.Uuid
   shopId String  @db.Uuid
+  userId String  @db.Uuid
   title  String?
 
-  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  shop ShopifyShop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  member ShopMember @relation(fields: [shopId, userId], references: [shopId, userId], onDelete: Cascade)
 
   messages Message[]
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt
 
-  @@index([userId, updatedAt])
-  @@index([shopId, updatedAt])
+  @@index([shopId, userId, updatedAt])
 }
 
 model Message {

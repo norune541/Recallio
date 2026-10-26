@@ -65,11 +65,11 @@ export function SignOutDialog() {
           </div>
 
           <div className="space-y-2">
-            <DialogTitle className="text-lg">
+            <DialogTitle className="text-lg text-center mt-2">
               Sign out of your account?
             </DialogTitle>
 
-            <DialogDescription className="text-sm leading-relaxed">
+            <DialogDescription className="text-sm leading-relaxed text-center mb-5">
               Are you sure you want to sign out? You’ll need to sign back in to
               access your account.
             </DialogDescription>
