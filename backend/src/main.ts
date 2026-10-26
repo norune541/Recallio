@@ -11,20 +11,23 @@ import helmet from 'helmet';
 
 import { AppModule } from './app.module.js';
 import { env } from './config/env.js';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
   const { PORT, CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY } = env;
   const BASE_URL = `http://localhost:${PORT}`;
 
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
   });
+  app.set('trust proxy', 1);
   app.enableCors({
     origin: 'http://localhost:5173',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Retry-After'],
   });
   app.use(helmet());
   app.setGlobalPrefix('/api');

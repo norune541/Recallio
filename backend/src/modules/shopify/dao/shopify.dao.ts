@@ -157,13 +157,10 @@ export class ShopifyDao {
     });
   }
 
-  async removeUserMembership(shopId: string, userId: string): Promise<void> {
-    await this.prisma.shopMember.delete({
+  async removeShop(shopDomain: string): Promise<void> {
+    await this.prisma.shopifyShop.delete({
       where: {
-        shopId_userId: {
-          shopId,
-          userId,
-        },
+        shopDomain,
       },
     });
   }
@@ -200,6 +197,17 @@ export class ShopifyDao {
     });
 
     return membership?.shop ?? null;
+  }
+
+  async findShopByDomain(shopDomain: string) {
+    return await this.prisma.shopifyShop.findUnique({
+      where: {
+        shopDomain,
+      },
+      select: {
+        status: true,
+      },
+    });
   }
 
   async findMembers(shopId: string, userId: string) {

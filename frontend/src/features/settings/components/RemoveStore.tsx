@@ -14,7 +14,7 @@ import {
 
 import { useRemoveMembership } from '../hooks/removeMembership';
 
-export function RemoveMembershipDialog() {
+export function RemoveStoreDialog() {
   const [open, setOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -37,9 +37,9 @@ export function RemoveMembershipDialog() {
       onSuccess: () => {
         window.location.href = '/';
       },
-      onError: () => {
+      onError: (error) => {
         setFormError(
-          'We couldn’t remove your Shopify integration. Please try again.',
+          error.message ?? 'We couldn’t remove your Shop. Please try again.',
         );
       },
     });
@@ -55,7 +55,7 @@ export function RemoveMembershipDialog() {
           disabled={isPending}
         >
           <Trash2 className="size-4" />
-          Disconnect shop
+          Remove shop
         </Button>
       </DialogTrigger>
 
@@ -68,13 +68,13 @@ export function RemoveMembershipDialog() {
           </div>
 
           <div className="space-y-2">
-            <DialogTitle className="text-lg">
-              Remove store connection?
+            <DialogTitle className="text-lg text-center mt-2">
+              Remove shop?
             </DialogTitle>
 
-            <DialogDescription className="text-sm leading-relaxed">
-              This will disconnect your Recallio account from this Shopify
-              store. You can reconnect it later to resume syncing conversations.
+            <DialogDescription className="text-sm leading-relaxed text-center mb-5">
+              This will permanently delete this store and all its synced data
+              from Recallio. This can't be undone.
             </DialogDescription>
           </div>
         </DialogHeader>
@@ -84,9 +84,9 @@ export function RemoveMembershipDialog() {
             <AlertCircle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
 
             <p className="text-sm text-muted-foreground leading-relaxed">
-              This only removes the connection between your account and the
-              store. The Shopify store itself and your Recallio account will not
-              be deleted.
+              This will permanently delete this Shopify store from Recallio,
+              along with its synced conversations and settings. This action
+              cannot be undone.
             </p>
           </div>
         </div>
