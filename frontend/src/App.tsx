@@ -23,8 +23,8 @@ export default function App() {
             <Route path="/" element={<AppLayout />}>
               <Route index element={<OverviewPage />}></Route>
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/details" element={<GetProductDetailsPage />} />
             </Route>
-            <Route path="/details" element={<GetProductDetailsPage />} />
           </Route>
         </Route>
       </Routes>
