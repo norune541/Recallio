@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Delete,
   ForbiddenException,
@@ -30,7 +31,7 @@ import {
   ShopifyCallbackQueryDto,
   ShopifyCallbackResponseDto,
 } from './dto/shopify.dto.js';
-import { ShopifyProductDto } from './dto/shopify-products.dto.js';
+import { ShopifyProductsResponseDto } from './dto/shopify-products.dto.js';
 import {
   ShopifyShopDto,
   ShopifyShopBadGatewayErrorDto,
@@ -42,9 +43,13 @@ import { UserNotFoundDto } from '../user/dto/UserNotFound.dto.js';
 
 import { BeginShopifyAuthUseCase } from './use-cases/auth/begin-shopify-auth.use-case.js';
 import { CompleteShopifyAuthUseCase } from './use-cases/auth/complete-shopify-auth.use-case.js';
-import { GetProductsUseCase } from './use-cases/api/get-products.js';
-import { GetShopUseCase } from './use-cases/api/get-shop.js';
+import { GetProductsUseCase } from './use-cases/shop/get-products.js';
+import { GetShopUseCase } from './use-cases/shop/get-shop.js';
 import { DeleteShop } from './use-cases/shop/delete-shop.use-case.js';
+
+import { getProductsSchema } from '@recallio/shared/schemas';
+
+import type { getProductsType } from '@recallio/shared/schemas';
 import type { Request, Response } from 'express';
 
 @ApiTags('Shopify')
@@ -129,8 +134,6 @@ export class ShopifyController {
     return res.redirect(`http://localhost:5173/`);
   }
 
-  // TODO: Add cursor pagination to GET /products (`limit`, `after`, return `{ items, pageInfo }`).
-  // Verify the default `status` filter (docs mark `active` as default) and `MAX_PAGE_SIZE`.
   @Get('products')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({
@@ -139,7 +142,18 @@ export class ShopifyController {
   @ApiResponse({
     status: 200,
     description: 'List of products for the user shop',
-    type: [ShopifyProductDto],
+    type: [ShopifyProductsResponseDto],
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    example: 10,
+  })
+  @ApiQuery({
+    name: 'after',
+    required: false,
+    type: String,
   })
   @ApiExtraModels(ShopNotFoundDto, UserNotFoundDto)
   @ApiNotFoundResponse({
@@ -147,9 +161,20 @@ export class ShopifyController {
     schema: { oneOf: refs(ShopNotFoundDto, UserNotFoundDto) },
   })
   @ApiBadGatewayResponse({ type: ShopifyShopBadGatewayErrorDto })
-  async getProducts(@Req() req: Request): Promise<ShopifyProductDto[]> {
+  async getProducts(
+    @Req() req: Request,
+    @Query() query: getProductsType,
+  ): Promise<ShopifyProductsResponseDto> {
+    const parsedQuery = getProductsSchema.safeParse(query);
+
+    if (!parsedQuery.success) {
+      throw new BadRequestException('Validation failed');
+    }
+
     return await this.getProductsUseCase.execute(
       req.user.emailAddresses[0].emailAddress,
+      parsedQuery.data.limit,
+      parsedQuery.data.after,
     );
   }
 

@@ -1,9 +1,17 @@
-import { BadGatewayException, Injectable } from '@nestjs/common';
+import {
+  BadGatewayException,
+  BadRequestException,
+  Injectable,
+} from '@nestjs/common';
+import { GraphqlQueryError } from '@shopify/shopify-api';
 import { createShopifyGraphqlClient } from '../../shopify-api.client.js';
 import { GetValidShopifyAccessTokenUseCase } from '../auth/get-valid-shopify-access-token.use-case.js';
+
 import { ShopifyDao } from '../../dao/shopify.dao.js';
+
 import { UserNotFoundException } from 'backend/src/modules/user/dto/UserNotFound.dto.js';
 import { ShopNotFoundException } from '../../dto/shop-notFound.dto.js';
+import type { ShopifyProductsResponseDto } from '../../dto/shopify-products.dto.js';
 
 type ProductStatus = 'ACTIVE' | 'ARCHIVED' | 'DRAFT' | 'UNLISTED';
 type Money = { amount: string; currencyCode: string };
@@ -54,8 +62,13 @@ type ShopifyProductListData = {
 };
 
 const PRODUCTS_QUERY = `#graphql
-  query Products {
-    products(first: 10, sortKey: TITLE, reverse: false) {
+  query Products($first: Int!, $after: String) {
+    products(
+      first: $first,
+      after: $after,
+      sortKey: TITLE,
+      reverse: false
+    ) {
       nodes {
         id
         title
@@ -111,36 +124,61 @@ export class GetProductsUseCase {
     private readonly getValidToken: GetValidShopifyAccessTokenUseCase,
   ) {}
 
-  async execute(email: string): Promise<ShopifyProductNode[]> {
-    const user = await this.shopifyDao.findUserIdByEmail(email);
+  async execute(
+    email: string,
+    limit: number,
+    after?: string,
+  ): Promise<ShopifyProductsResponseDto> {
+    try {
+      const user = await this.shopifyDao.findUserIdByEmail(email);
 
-    if (!user) {
-      throw new UserNotFoundException();
-    }
+      if (!user) {
+        throw new UserNotFoundException();
+      }
 
-    const shop = await this.shopifyDao.findShopByUserId(user.id);
+      const shop = await this.shopifyDao.findShopByUserId(user.id);
 
-    if (!shop) {
-      throw new ShopNotFoundException();
-    }
+      if (!shop) {
+        throw new ShopNotFoundException();
+      }
 
-    const accessToken = await this.getValidToken.execute(shop.shopDomain);
+      const accessToken = await this.getValidToken.execute(shop.shopDomain);
 
-    const client = createShopifyGraphqlClient(
-      shop.shopDomain,
-      accessToken,
-      'read_products',
-    );
-
-    const { data, errors } =
-      await client.request<ShopifyProductListData>(PRODUCTS_QUERY);
-
-    if (errors) {
-      throw new BadGatewayException(
-        errors.message ?? 'Shopify GraphQL request failed',
+      const client = createShopifyGraphqlClient(
+        shop.shopDomain,
+        accessToken,
+        'read_products',
       );
-    }
 
-    return data?.products.nodes ?? [];
+      const { data, errors } = await client.request<ShopifyProductListData>(
+        PRODUCTS_QUERY,
+        { variables: { first: limit, after } },
+      );
+
+      if (errors) {
+        throw new BadGatewayException(
+          errors.message ?? 'Shopify GraphQL request failed',
+        );
+      }
+
+      return {
+        items: data?.products.nodes ?? [],
+        pageInfo: data?.products.pageInfo ?? {
+          hasNextPage: false,
+          endCursor: null,
+        },
+      };
+    } catch (err) {
+      if (err instanceof GraphqlQueryError) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const graphQLErrors = err.body?.errors.graphQLErrors;
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const message = graphQLErrors[0]?.message;
+        throw new BadRequestException(message);
+      }
+
+      throw new BadGatewayException('Failed to retrieve Shopify products');
+    }
   }
 }

@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./schemas/*": {
-      "types": "./dist/schemas/*.d.ts",
-      "import": "./dist/schemas/*.js"
+    "./schemas": {
+      "types": "./dist/schemas/index.d.ts",
+      "import": "./dist/schemas/index.js"
     },
     "./types/api": {
       "types": "./dist/types/api.d.ts"

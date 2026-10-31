@@ -316,6 +316,24 @@ export interface components {
             /** @description Product price range */
             priceRangeV2: components["schemas"]["ShopifyPriceRangeDto"];
         };
+        ShopifyPageInfoDto: {
+            /**
+             * @description Whether more products are available
+             * @example true
+             */
+            hasNextPage: boolean;
+            /**
+             * @description Cursor for fetching the next page
+             * @example eyJsYXN0X2lk...
+             */
+            endCursor: string | null;
+        };
+        ShopifyProductsResponseDto: {
+            /** @description List of Shopify products */
+            items: components["schemas"]["ShopifyProductDto"][];
+            /** @description Pagination information */
+            pageInfo: components["schemas"]["ShopifyPageInfoDto"];
+        };
         ShopifyShopBadGatewayErrorDto: {
             /**
              * @description HTTP status code
@@ -649,7 +667,10 @@ export interface operations {
     };
     ShopifyController_getProducts: {
         parameters: {
-            query?: never;
+            query?: {
+                after?: string;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -662,7 +683,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ShopifyProductDto"][];
+                    "application/json": components["schemas"]["ShopifyProductsResponseDto"][];
                 };
             };
             /** @description Shop or user not found (see `code`) */
