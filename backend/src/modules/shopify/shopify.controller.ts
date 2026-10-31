@@ -142,7 +142,7 @@ export class ShopifyController {
   @ApiResponse({
     status: 200,
     description: 'List of products for the user shop',
-    type: [ShopifyProductsResponseDto],
+    type: ShopifyProductsResponseDto,
   })
   @ApiQuery({
     name: 'limit',

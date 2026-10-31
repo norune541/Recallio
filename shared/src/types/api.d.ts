@@ -683,7 +683,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ShopifyProductsResponseDto"][];
+                    "application/json": components["schemas"]["ShopifyProductsResponseDto"];
                 };
             };
             /** @description Shop or user not found (see `code`) */
