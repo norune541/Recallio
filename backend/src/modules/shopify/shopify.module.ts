@@ -11,8 +11,10 @@ import { RefreshShopifyAccessTokenUseCase } from './use-cases/auth/refresh-shopi
 import { GetProductsUseCase } from './use-cases/shop/get-products.js';
 import { GetShopUseCase } from './use-cases/shop/get-shop.js';
 import { DeleteShop } from './use-cases/shop/delete-shop.use-case.js';
+import { ClaudeModule } from '../claude/claude.module.js';
 
 @Module({
+  imports: [ClaudeModule],
   controllers: [ShopifyController],
   providers: [
     ShopifyDao,
