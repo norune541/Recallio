@@ -219,6 +219,9 @@ export class ShopifyController {
     description:
       'The shop owner cannot leave while other members remain. Ownership must be transferred first.',
   })
+  @ApiForbiddenResponse({
+    description: 'Only the shop owner can delete the shop.',
+  })
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteMembership(@Req() req: Request) {
     await this.deleteShop.execute(req.user.emailAddresses[0].emailAddress);

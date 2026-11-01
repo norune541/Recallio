@@ -132,7 +132,10 @@ export function CatalogComponent() {
     isFetchingNextPage,
   } = useProducts();
 
-  const products = data?.pages.flatMap((page) => page.items ?? []) ?? [];
+  const products = useMemo(
+    () => data?.pages.flatMap((page) => page.items ?? []) ?? [],
+    [data],
+  );
 
   const productTypes = useMemo(
     () => [
