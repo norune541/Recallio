@@ -1,0 +1,36 @@
+---
+description: Recallio monorepo architecture and package boundaries
+alwaysApply: true
+---
+
+# Architecture
+
+Recallio is a Bun workspaces monorepo: `backend`, `frontend`, `shared`.
+
+## Packages
+
+- **`backend` (`@recallio/backend`)** — NestJS API: modules, config, Prisma, integrations.
+- **`frontend` (`@recallio/frontend`)** — React + Vite dashboard.
+- **`shared` (`@recallio/shared`)** — Zod schemas (`@recallio/shared/schemas`) and generated OpenAPI types (`@recallio/api-types` → `shared/src/types/api.d.ts`).
+
+Do not invent new packages or cross-package layers. Keep app logic in `backend`/`frontend`; put only shared runtime schemas and API types in `shared`.
+
+## Boundaries
+
+- Controllers stay thin: validate input, call a use case, return DTOs.
+- Business logic lives in **use cases** (`*.use-case.ts` or `use-cases/*.ts`).
+- Persistence lives in **DAOs** (`*.dao.ts`). Do not call Prisma from controllers.
+- External SDKs (Shopify, Anthropic, Clerk) stay behind module providers/clients/adapters — not in controllers or DAOs.
+- Before proposing architectural changes, inspect the relevant existing module first.
+
+## Shared package
+
+- Add cross-cutting Zod schemas under `shared/src/schemas/` and re-export from `schemas/index.ts`.
+- Regenerate OpenAPI types with root `api:generate` after backend route/DTO changes; do not hand-edit `api.d.ts`.
+- Rebuild shared after schema changes: `bun run --cwd shared build`.
+
+## Tooling
+
+- Package manager: Bun. Root scripts use `bun --filter @recallio/...`.
+- Backend ESM: Nest + TypeScript `nodenext`; relative imports use `.js` extensions.
+- Do not introduce secrets into source. Env is validated in `backend/src/config/env.ts`.

@@ -7,6 +7,8 @@ import { SettingsPage } from './features/settings/pages/SettingsPage';
 import { RateLimitLayout } from './components/RateLimit';
 import { NotFoundPage } from './common/pages/NotFoundPage';
 
+import { OverviewPage } from './features/overview/pages/OverviewPage';
+import { GetProductDetailsPage } from './features/overview/pages/ProductDetailsPage';
 import AppLayout from './AppLayout';
 
 export default function App() {
@@ -19,7 +21,9 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<AppLayout />}>
+              <Route index element={<OverviewPage />}></Route>
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/details" element={<GetProductDetailsPage />} />
             </Route>
           </Route>
         </Route>

@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { z } from 'zod';
 
-const envSchema = z.object({
+export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test'], {
     error: "NODE_ENV must be 'development', 'production', or 'test'",
   }),
@@ -34,7 +34,7 @@ const envSchema = z.object({
     )
     .min(1, 'SHOPIFY_TOKEN_ENCRYPTION_KEY is required'),
 
-  GEMINI_API_KEY: z.string().min(1, 'GEMINI_API_KEY is required'),
+  ANTHROPIC_API_KEY: z.string().min(1, 'ANTHROPIC_API_KEY is required'),
 });
 
 let env: z.infer<typeof envSchema>;

@@ -176,3 +176,33 @@ export class ShopifyProductDto {
   })
   priceRangeV2: ShopifyPriceRangeDto;
 }
+
+export class ShopifyPageInfoDto {
+  @ApiProperty({
+    description: 'Whether more products are available',
+    example: true,
+  })
+  hasNextPage: boolean;
+
+  @ApiProperty({
+    description: 'Cursor for fetching the next page',
+    example: 'eyJsYXN0X2lk...',
+    nullable: true,
+    type: String,
+  })
+  endCursor: string | null;
+}
+
+export class ShopifyProductsResponseDto {
+  @ApiProperty({
+    type: [ShopifyProductDto],
+    description: 'List of Shopify products',
+  })
+  items: ShopifyProductDto[];
+
+  @ApiProperty({
+    type: ShopifyPageInfoDto,
+    description: 'Pagination information',
+  })
+  pageInfo: ShopifyPageInfoDto;
+}

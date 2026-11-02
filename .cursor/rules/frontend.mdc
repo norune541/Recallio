@@ -1,0 +1,57 @@
+---
+description: React frontend features, API client, and UI conventions
+globs: frontend/**/*
+alwaysApply: false
+---
+
+# Frontend
+
+## Layout
+
+```text
+frontend/src/
+  features/<feature>/{pages,hooks,components}/
+  components/ui/          # shadcn / Base UI primitives
+  common/                 # api client, ProtectedRoutes, shared pages/hooks
+  App.tsx                 # routes
+  AppLayout.tsx           # authenticated shell
+  main.tsx                # ClerkProvider + QueryClientProvider
+```
+
+Features today: `auth`, `overview`, `settings`. Colocate new UI with the feature that owns it.
+
+## Data fetching
+
+- Use the shared OpenAPI client from `@/common/api` (`authClient` via `openapi-fetch`).
+- Types come from `@recallio/api-types` (`paths`, `components['schemas']`).
+- Wrap calls in TanStack Query hooks under `features/*/hooks/`:
+
+```typescript
+export function useShopify() {
+  return useQuery({
+    queryKey: ['shopify', 'shop'],
+    queryFn: async () => {
+      const { data, error } = await authClient.GET('/api/integrations/shopify/shop');
+      if (error) throw error;
+      return data;
+    },
+    retry: false,
+  });
+}
+```
+
+- `authClient` attaches Clerk Bearer tokens and surfaces 429 via rate-limit middleware — do not reinvent auth headers.
+- Base URL: `import.meta.env.VITE_API_URL` only (see `frontend/.env.local`).
+
+## Auth & routing
+
+- Clerk (`@clerk/react`) for session UI; protect app routes with `ProtectedRoute`.
+- Public: `/login`, `/signup`. Authenticated shell under `/` via `AppLayout`.
+- Do not call Shopify/Anthropic SDKs from the browser; use backend `/api/...` routes.
+
+## UI
+
+- Prefer existing `components/ui/*` (shadcn + Base UI + Tailwind).
+- Alias `@/` → `frontend/src`.
+- Toasts: Sonner. Forms: React Hook Form where already used.
+- Keep feature pages focused; extract hooks for API/state, components for reusable UI.
