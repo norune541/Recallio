@@ -1,0 +1,40 @@
+---
+description: Auth, secrets, Shopify OAuth, and token-handling security rules
+alwaysApply: true
+---
+
+# Security
+
+## Secrets & env
+
+- Never commit secrets, `.env*`, PEM keys, or API credentials. They are gitignored.
+- All backend secrets are declared and validated in `backend/src/config/env.ts` (Zod). Add new secrets there — never hardcode.
+- Frontend may only expose `VITE_*` public config (e.g. `VITE_API_URL`).
+- Required secret groups today: Clerk, Shopify (incl. `SHOPIFY_TOKEN_ENCRYPTION_KEY` 64-char hex), `ANTHROPIC_API_KEY`, `DATABASE_URL`.
+
+## Authentication & authorization
+
+- Clerk authenticates Recallio users (`clerkMiddleware` + `ClerkAuthGuard`).
+- Protected controllers use `@UseGuards(ClerkAuthGuard)` and identify the user via `req.user` (Clerk user; email used for shop lookup).
+- Clerk webhooks must use `verifyWebhook` with raw body (`rawBody: true` in bootstrap).
+- Shopify OAuth **callback** is intentionally public; validate HMAC, timestamp, and one-time state before exchanging codes.
+- Ownership checks belong in use cases (e.g. only `OWNER` may delete a shop).
+
+## Shopify tokens
+
+- Store only **encrypted** access/refresh tokens (`ShopifyOAuthUtils` AES-256-GCM `v1:iv:tag:ciphertext`).
+- Decrypt and refresh only on the server via `GetValidShopifyAccessTokenUseCase` / refresh use case.
+- Never send Shopify tokens to the frontend or log plaintext tokens.
+- OAuth state: store SHA-256 hash only; consume attempts once; reject stale timestamps/HMAC failures with `ForbiddenException`.
+
+## HTTP hardening (preserve)
+
+- Helmet enabled; CORS limited to the Vite origin with credentials.
+- Global Nest throttler (`ThrottlerGuard`, 100 req / 60s); expose `Retry-After`.
+- Trust proxy is set for correct client IP behind proxies.
+
+## Agent hygiene
+
+- Before changing auth, OAuth, encryption, or webhook code, read the current implementation.
+- Do not weaken HMAC/state/timestamp checks, skip encryption, or move token handling into the browser “for convenience.”
+- Do not put secrets in rules, commits, tests fixtures that are committed, or example snippets with real values.

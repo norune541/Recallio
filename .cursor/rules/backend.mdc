@@ -1,0 +1,86 @@
+---
+description: NestJS backend modules, DI, use cases, and integrations
+globs: backend/**/*
+alwaysApply: false
+---
+
+# Backend
+
+## Module layout
+
+Feature code lives under `backend/src/modules/<name>/`:
+
+```text
+modules/<name>/
+  <name>.module.ts
+  <name>.controller.ts      # HTTP + Swagger only
+  dao/                     # Prisma access
+  dto/                     # Swagger DTOs + typed exceptions
+  use-cases/               # Business orchestration
+  *-api.client.ts / *Provider.ts / *-oauth.utils.ts  # infra adapters
+```
+
+Existing modules: `health`, `user`, `clerk`, `shopify`, `claude`. Wire new features as Nest modules imported from `AppModule`.
+
+## Dependency injection
+
+- Prefer concrete `@Injectable()` classes registered in the module `providers` array.
+- Controllers inject **use cases**, not DAOs or SDK clients.
+- Use cases inject DAOs and infrastructure providers.
+- Export only what other modules need (e.g. `ClaudeModule` exports `AnalyzeProductUseCase`; `UserModule` exports `UserDao` / `CreateUserUseCase`).
+- `PrismaModule` is `@Global()` — do not re-provide Prisma unless mirroring an existing test/health setup.
+- There is no generic Nest `*Service` layer; do not add one.
+
+## Use cases
+
+```typescript
+@Injectable()
+export class GetShopUseCase {
+  constructor(private readonly shopifyDao: ShopifyDao) {}
+  async execute(email: string) { /* ... */ }
+}
+```
+
+- One public `execute(...)` entry point.
+- Throw Nest HTTP exceptions (`BadRequestException`, `NotFoundException`, typed `*Exception` classes).
+
+## Error handling
+
+- Prefer Nest built-ins for generic failures.
+- Domain not-found errors use typed exceptions + Swagger DTOs with a `code` field (e.g. `USER_NOT_FOUND`, `SHOP_NOT_FOUND` in `dto/`).
+- Controllers document errors with `@ApiNotFoundResponse`, `refs(...)`, etc.
+- Map upstream Shopify/Anthropic failures to gateway/bad-request exceptions; do not leak raw SDK payloads.
+
+## Validation & API
+
+- Global `StandardSchemaValidationPipe` in `main.ts`; Zod schemas may also be parsed in controllers (`safeParse`).
+- Shared request schemas: `@recallio/shared/schemas`.
+- Routes under global prefix `/api`. Document with `@nestjs/swagger`.
+- Auth: `ClerkAuthGuard` on protected routes. Shopify OAuth `callback` stays public. Clerk webhooks use `verifyWebhook`.
+
+## Integrations
+
+### Shopify (`modules/shopify`)
+
+- OAuth: `BeginShopifyAuthUseCase` / `CompleteShopifyAuthUseCase`.
+- Tokens: encrypt via `ShopifyOAuthUtils.encryptToken` before DAO writes; obtain plaintext only via `GetValidShopifyAccessTokenUseCase` (server-side).
+- Admin API: `ShopifyApiClient` + `createShopifyGraphqlClient` — GraphQL in use cases, not controllers.
+- Never return access/refresh tokens to the client.
+
+### Anthropic / Claude (`modules/claude`)
+
+- `ClaudeClientProvider` owns `@anthropic-ai/sdk` client construction from `env.ANTHROPIC_API_KEY`.
+- `ClaudeMessageProvider` wraps `messages.create`.
+- Feature use cases (e.g. `AnalyzeProductUseCase`) call the message provider — do not call Anthropic from Shopify controllers/DAOs.
+
+### Clerk
+
+- `clerkMiddleware` in `main.ts`; `ClerkAuthGuard` loads `req.user`.
+- User provisioning: `POST /api/webhooks/clerk` → `CreateUserUseCase` / `UserDao`.
+
+## Testing
+
+- Vitest (`backend/vitest.config.ts`). Run: `bun run backend:test` (loads `.env.test`).
+- Unit: construct use case with `vi.fn()` mocks (see `test/shopify-auth.security.spec.ts`).
+- E2E: `Test.createTestingModule`, override `ClerkAuthGuard`, `supertest`, real `PrismaService` against test DB (see `test/shopify.e2e-spec.ts`).
+- Prefer testing use-case security invariants and HTTP contracts over SDK internals.

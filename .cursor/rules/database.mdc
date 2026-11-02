@@ -1,0 +1,42 @@
+---
+description: Prisma schema, migrations, and DAO data-access conventions
+globs:
+  - backend/src/prisma/**
+  - backend/src/**/*.dao.ts
+alwaysApply: false
+---
+
+# Database
+
+## Prisma
+
+- Schema: `backend/src/prisma/schema.prisma`.
+- Config: `backend/prisma7.config.ts` (Prisma 7 + `DATABASE_URL`).
+- Client output: `backend/src/generated/prisma` (`generator client` with `moduleFormat = "cjs"`).
+- DB: PostgreSQL. Timestamps use `@db.Timestamptz(3)`. IDs are UUID `@db.Uuid`.
+- Access runtime DB only through `PrismaService` (`extends PrismaClient` + `@prisma/adapter-pg`).
+
+```bash
+bunx prisma generate --schema backend/src/prisma/schema.prisma
+bunx prisma migrate dev --schema backend/src/prisma/schema.prisma
+```
+
+Do not hand-edit `backend/src/generated/prisma/**`. Commit migrations under `backend/src/prisma/migrations/`.
+
+## Models (current)
+
+- `User` — keyed by `clerkUserId` / `email`; provisioned from Clerk webhooks.
+- `ShopifyShop` — encrypted token fields (`accessTokenEncrypted`, `refreshTokenEncrypted`), `ShopifyShopStatus`.
+- `ShopMember` — composite `@@id([shopId, userId])`; `userId` is `@unique` (one shop per user today); roles `OWNER` | `ADMIN` | `MEMBER`.
+- `ShopifyOAuthAttempt` — stores **hashed** OAuth state only; consume once.
+- `Conversation` / `Message` — shop-member-scoped chat history (roles via `MessageRole`).
+
+Preserve existing enums, cascades (`onDelete: Cascade`), and indexes when extending.
+
+## DAO conventions
+
+- One DAO per aggregate/module (e.g. `UserDao`, `ShopifyDao`).
+- DAOs wrap Prisma queries/`$transaction`; no HTTP or external SDK calls.
+- Prefer `select` projections for read paths.
+- Multi-step writes that must be atomic use `prisma.$transaction` (see `saveConnectedShopAndMember`).
+- Use cases own authorization/business rules; DAOs own persistence mechanics.
