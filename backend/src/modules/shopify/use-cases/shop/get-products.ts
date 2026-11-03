@@ -33,6 +33,8 @@ const PRODUCTS_QUERY = `#graphql
         id
         title
         handle
+        description
+        descriptionHtml
         vendor
         productType
         tags
@@ -43,16 +45,52 @@ const PRODUCTS_QUERY = `#graphql
         totalInventory
         onlineStoreUrl
         onlineStorePreviewUrl
-        priceRangeV2 {
-          minVariantPrice { amount currencyCode }
-          maxVariantPrice { amount currencyCode }
+
+        seo {
+          title
+          description
         }
+
+        priceRangeV2 {
+          minVariantPrice {
+            amount
+            currencyCode
+          }
+          maxVariantPrice {
+            amount
+            currencyCode
+          }
+        }
+
         featuredMedia {
           preview {
-            image { url altText width height }
+            image {
+              url
+              altText
+              width
+              height
+            }
+          }
+        }
+
+        variants(first: 100) {
+          nodes {
+            id
+            title
+            sku
+            barcode
+            price
+            compareAtPrice
+            inventoryQuantity
+            inventoryPolicy
+            selectedOptions {
+              name
+              value
+            }
           }
         }
       }
+
       pageInfo {
         hasNextPage
         endCursor

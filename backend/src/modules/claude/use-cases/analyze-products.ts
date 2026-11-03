@@ -8,8 +8,6 @@ export class AnalyzeProductUseCase {
   constructor(private readonly anthropic: ClaudeMessageProvider) {}
 
   async execute(page: ShopifyProductNode) {
-    return await this.anthropic.sendMessage(
-      `Analyze the page data: ${JSON.stringify(page)}`,
-    );
+    return await this.anthropic.analyzeProduct(page);
   }
 }
