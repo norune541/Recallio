@@ -44,11 +44,13 @@ import { UserNotFoundDto } from '../user/dto/UserNotFound.dto.js';
 import { BeginShopifyAuthUseCase } from './use-cases/auth/begin-shopify-auth.use-case.js';
 import { CompleteShopifyAuthUseCase } from './use-cases/auth/complete-shopify-auth.use-case.js';
 import { GetProductsUseCase } from './use-cases/shop/get-products.js';
+import { AnalyzeProductUseCase } from './use-cases/shop/get-product.js';
+
 import { GetShopUseCase } from './use-cases/shop/get-shop.js';
 import { DeleteShop } from './use-cases/shop/delete-shop.use-case.js';
 
 import { getProductsSchema } from '@recallio/shared/schemas';
-
+import { ProductReviewResponse } from './dto/product-review-response.js';
 import type { getProductsType } from '@recallio/shared/schemas';
 import type { Request, Response } from 'express';
 
@@ -61,6 +63,7 @@ export class ShopifyController {
     private readonly getProductsUseCase: GetProductsUseCase,
     private readonly getShopUseCase: GetShopUseCase,
     private readonly deleteShop: DeleteShop,
+    private readonly analyzeProduct: AnalyzeProductUseCase,
   ) {}
 
   /**
@@ -175,6 +178,42 @@ export class ShopifyController {
       req.user.emailAddresses[0].emailAddress,
       parsedQuery.data.limit,
       parsedQuery.data.after,
+    );
+  }
+
+  @Get('product')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Analyze Shopify product with AI' })
+  @ApiOkResponse({
+    description: 'Shopify product details with AI analysis',
+    type: ProductReviewResponse,
+  })
+  @ApiBadRequestResponse({
+    description: 'productId is required',
+  })
+  @ApiExtraModels(ShopNotFoundDto, UserNotFoundDto)
+  @ApiNotFoundResponse({
+    description: 'Shop or user not found (see `code`)',
+    schema: { oneOf: refs(ShopNotFoundDto, UserNotFoundDto) },
+  })
+  @ApiQuery({
+    name: 'productId',
+    required: true,
+    type: String,
+    description: 'Shopify product ID (GID)',
+    example: 'gid://shopify/Product/123456789',
+  })
+  async getProduct(
+    @Req() req: Request,
+    @Query('productId') productId: string,
+  ): Promise<ProductReviewResponse> {
+    if (!productId?.trim()) {
+      throw new BadRequestException('productId is required');
+    }
+
+    return this.analyzeProduct.execute(
+      req.user.emailAddresses[0].emailAddress,
+      productId,
     );
   }
 

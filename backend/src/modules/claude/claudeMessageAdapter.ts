@@ -9,7 +9,7 @@ import type { ProductAIReview } from './dto/product-review.js';
 import type { ShopifyProductNode } from 'backend/src/common/types/products.js';
 
 @Injectable()
-export class ClaudeMessageProvider {
+export class ClaudeMessageAdapter {
   constructor(private readonly anthropic: ClaudeClientProvider) {}
 
   async analyzeProduct(message: ShopifyProductNode): Promise<ProductAIReview> {
