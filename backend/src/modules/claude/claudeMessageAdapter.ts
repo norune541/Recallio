@@ -1,26 +1,34 @@
 import { Injectable } from '@nestjs/common';
 import { InternalServerErrorException } from '@nestjs/common';
+import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
+
 import { ClaudeClientProvider } from './claudeClientProvider.js';
+import { ProductAIReviewSchema } from './dto/product-review.js';
+import { ANALYZE_PRODUCT_SYSTEM_PROMPT } from './prompts/analyze-product.js';
+import type { ProductAIReview } from './dto/product-review.js';
+import type { ShopifyProductNode } from 'backend/src/common/types/products.js';
 
 @Injectable()
 export class ClaudeMessageProvider {
   constructor(private readonly anthropic: ClaudeClientProvider) {}
 
-  async sendMessage(message: string): Promise<string> {
-    const response = await this.anthropic.client.messages.create({
-      max_tokens: 1024,
-      messages: [{ role: 'user', content: message }],
+  async analyzeProduct(message: ShopifyProductNode): Promise<ProductAIReview> {
+    const response = await this.anthropic.client.messages.parse({
+      max_tokens: 2048,
+      system: ANALYZE_PRODUCT_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: JSON.stringify(message) }],
       model: 'claude-haiku-4-5',
+      output_config: {
+        format: zodOutputFormat(ProductAIReviewSchema),
+      },
     });
 
-    for (const block of response.content) {
-      if (block.type === 'text') {
-        return block.text;
-      }
+    if (!response.parsed_output) {
+      throw new InternalServerErrorException(
+        'Anthropic returned a response without a text block',
+      );
     }
 
-    throw new InternalServerErrorException(
-      'Anthropic returned a response without a text block',
-    );
+    return response.parsed_output;
   }
 }
