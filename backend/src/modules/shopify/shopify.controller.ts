@@ -6,6 +6,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Query,
   Req,
   Res,
@@ -24,6 +25,7 @@ import {
   ApiConflictResponse,
   ApiOkResponse,
   ApiForbiddenResponse,
+  ApiParam,
 } from '@nestjs/swagger';
 
 import { ClerkAuthGuard } from '../../common/clerk-auth.guard.js';
@@ -181,7 +183,7 @@ export class ShopifyController {
     );
   }
 
-  @Get('product')
+  @Get('product/:productId')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Analyze Shopify product with AI' })
   @ApiOkResponse({
@@ -196,7 +198,7 @@ export class ShopifyController {
     description: 'Shop or user not found (see `code`)',
     schema: { oneOf: refs(ShopNotFoundDto, UserNotFoundDto) },
   })
-  @ApiQuery({
+  @ApiParam({
     name: 'productId',
     required: true,
     type: String,
@@ -205,10 +207,15 @@ export class ShopifyController {
   })
   async getProduct(
     @Req() req: Request,
-    @Query('productId') productId: string,
+    @Param('productId') productId: string,
   ): Promise<ProductReviewResponse> {
-    if (!productId?.trim()) {
+    const SHOPIFY_PRODUCT_ID_REGEX = /^gid:\/\/shopify\/Product\/\d+$/;
+
+    if (typeof productId !== 'string' || !productId?.trim()) {
       throw new BadRequestException('productId is required');
+    }
+    if (!SHOPIFY_PRODUCT_ID_REGEX.test(productId)) {
+      throw new BadRequestException('Invalid Shopify product ID');
     }
 
     return this.analyzeProduct.execute(

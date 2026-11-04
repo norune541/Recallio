@@ -71,6 +71,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/integrations/shopify/product/{productId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Analyze Shopify product with AI */
+        get: operations["ShopifyController_getProduct"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/integrations/shopify/shop": {
         parameters: {
             query?: never;
@@ -350,6 +367,26 @@ export interface components {
              * @example Bad Gateway
              */
             error: string;
+        };
+        AIReviewSeoDto: {
+            title: string | null;
+            metaDescription: string | null;
+        };
+        AIReviewInsightDto: {
+            title: string;
+            description: string;
+            /** @enum {string} */
+            category: "content" | "product" | "seo" | "inventory" | "pricing";
+            /** @enum {string} */
+            priority: "low" | "medium" | "high";
+        };
+        ProductAIReviewDto: {
+            seo: components["schemas"]["AIReviewSeoDto"];
+            insights: components["schemas"]["AIReviewInsightDto"][];
+        };
+        ProductReviewResponse: {
+            product: components["schemas"]["ShopifyProductDto"];
+            aiReview: components["schemas"]["ProductAIReviewDto"];
         };
         ShopifyShopPrimaryDomainDto: {
             /**
@@ -705,6 +742,45 @@ export interface operations {
             };
         };
     };
+    ShopifyController_getProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Shopify product ID (GID) */
+                productId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Shopify product details with AI analysis */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductReviewResponse"];
+                };
+            };
+            /** @description productId is required */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Shop or user not found (see `code`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShopNotFoundDto"] | components["schemas"]["UserNotFoundDto"];
+                };
+            };
+        };
+    };
     ShopifyController_getShop: {
         parameters: {
             query?: never;
@@ -768,6 +844,13 @@ export interface operations {
             };
             /** @description The shop owner cannot leave while other members remain. Ownership must be transferred first. */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Only the shop owner can delete the shop. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
