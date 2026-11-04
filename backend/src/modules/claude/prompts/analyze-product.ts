@@ -62,12 +62,11 @@ INSIGHTS:
 - Use medium priority for issues worth addressing.
 - Use low priority for minor improvements.
 - If there are no meaningful issues, return an empty array.
-- There is no minimum number of insights.
+- Maximum number of insights is three
 
 SEO OUTPUT:
 - Return seo.title and seo.metaDescription.
 - These fields represent suggested replacements, not a copy of the existing values.
-- Return null when the current value does not need improvement.
 - Do not generate suggestions just to avoid returning null.
 
 OUTPUT REQUIREMENTS:

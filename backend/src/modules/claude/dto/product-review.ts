@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 export const ProductAIReviewSchema = z.object({
   seo: z.object({
-    title: z.string().nullable(),
-    metaDescription: z.string().nullable(),
+    title: z.string(),
+    metaDescription: z.string(),
   }),
 
   insights: z.array(
