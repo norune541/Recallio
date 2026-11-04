@@ -368,25 +368,96 @@ export interface components {
              */
             error: string;
         };
-        AIReviewSeoDto: {
+        ProductReviewSeoDto: {
+            title: string | null;
+            description: string | null;
+        };
+        ProductReviewImageDto: {
+            url: string;
+            altText: string | null;
+            width: number | null;
+            height: number | null;
+        };
+        ProductReviewMediaPreviewDto: {
+            image: components["schemas"]["ProductReviewImageDto"] | null;
+        };
+        ProductReviewFeaturedMediaDto: {
+            preview: components["schemas"]["ProductReviewMediaPreviewDto"] | null;
+        };
+        ProductReviewMoneyDto: {
+            /** @example 19.99 */
+            amount: string;
+            /** @example USD */
+            currencyCode: string;
+        };
+        ProductReviewPriceRangeDto: {
+            minVariantPrice: components["schemas"]["ProductReviewMoneyDto"];
+            maxVariantPrice: components["schemas"]["ProductReviewMoneyDto"];
+        };
+        ProductReviewSelectedOptionDto: {
+            name: string;
+            value: string;
+        };
+        ProductReviewVariantDto: {
+            id: string;
+            title: string;
+            sku: string | null;
+            barcode: string | null;
+            /** @example 19.99 */
+            price: string;
+            compareAtPrice: string | null;
+            inventoryQuantity: number;
+            /**
+             * @example DENY
+             * @enum {string}
+             */
+            inventoryPolicy: "DENY" | "CONTINUE";
+            selectedOptions: components["schemas"]["ProductReviewSelectedOptionDto"][];
+        };
+        ProductReviewVariantsDto: {
+            nodes: components["schemas"]["ProductReviewVariantDto"][];
+        };
+        ProductReviewProductDto: {
+            id: string;
+            title: string;
+            handle: string;
+            description: string;
+            descriptionHtml: string;
+            vendor: string;
+            productType: string;
+            tags: string[];
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED" | "DRAFT" | "UNLISTED";
+            createdAt: string;
+            updatedAt: string;
+            publishedAt: string | null;
+            totalInventory: number;
+            seo: components["schemas"]["ProductReviewSeoDto"];
+            featuredMedia: components["schemas"]["ProductReviewFeaturedMediaDto"] | null;
+            onlineStoreUrl: string | null;
+            onlineStorePreviewUrl: string | null;
+            priceRangeV2: components["schemas"]["ProductReviewPriceRangeDto"];
+            variants: components["schemas"]["ProductReviewVariantsDto"];
+        };
+        ProductReviewAISeoDto: {
             title: string | null;
             metaDescription: string | null;
         };
-        AIReviewInsightDto: {
+        ProductReviewAIInsightDto: {
             title: string;
             description: string;
             /** @enum {string} */
-            category: "content" | "product" | "seo" | "inventory" | "pricing";
+            category: "content" | "inventory" | "seo" | "pricing" | "product";
             /** @enum {string} */
             priority: "low" | "medium" | "high";
         };
-        ProductAIReviewDto: {
-            seo: components["schemas"]["AIReviewSeoDto"];
-            insights: components["schemas"]["AIReviewInsightDto"][];
+        ProductReviewAIReviewDto: {
+            seo: components["schemas"]["ProductReviewAISeoDto"];
+            insights: components["schemas"]["ProductReviewAIInsightDto"][];
         };
         ProductReviewResponse: {
-            product: components["schemas"]["ShopifyProductDto"];
-            aiReview: components["schemas"]["ProductAIReviewDto"];
+            product: components["schemas"]["ProductReviewProductDto"];
+            aiReview: components["schemas"]["ProductReviewAIReviewDto"];
         };
         ShopifyShopPrimaryDomainDto: {
             /**

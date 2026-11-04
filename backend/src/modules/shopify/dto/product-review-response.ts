@@ -12,7 +12,7 @@ export type ProductReviewResponseDto = {
   aiReview: ProductAIReview;
 };
 
-class ProductSeoDto {
+class ProductReviewSeoDto {
   @ApiProperty({ type: String, nullable: true })
   title!: string | null;
 
@@ -20,7 +20,7 @@ class ProductSeoDto {
   description!: string | null;
 }
 
-class ProductImageDto {
+class ProductReviewImageDto {
   @ApiProperty({ type: String })
   url!: string;
 
@@ -34,17 +34,23 @@ class ProductImageDto {
   height!: number | null;
 }
 
-class ProductMediaPreviewDto {
-  @ApiProperty({ type: () => ProductImageDto, nullable: true })
-  image!: ProductImageDto | null;
+class ProductReviewMediaPreviewDto {
+  @ApiProperty({
+    type: () => ProductReviewImageDto,
+    nullable: true,
+  })
+  image!: ProductReviewImageDto | null;
 }
 
-class ProductFeaturedMediaDto {
-  @ApiProperty({ type: () => ProductMediaPreviewDto, nullable: true })
-  preview!: ProductMediaPreviewDto | null;
+class ProductReviewFeaturedMediaDto {
+  @ApiProperty({
+    type: () => ProductReviewMediaPreviewDto,
+    nullable: true,
+  })
+  preview!: ProductReviewMediaPreviewDto | null;
 }
 
-class MoneyDto {
+class ProductReviewMoneyDto {
   @ApiProperty({ type: String, example: '19.99' })
   amount!: string;
 
@@ -52,27 +58,27 @@ class MoneyDto {
   currencyCode!: string;
 }
 
-class PriceRangeDto {
-  @ApiProperty({ type: () => MoneyDto })
-  minVariantPrice!: MoneyDto;
+class ProductReviewPriceRangeDto {
+  @ApiProperty({ type: () => ProductReviewMoneyDto })
+  minVariantPrice!: ProductReviewMoneyDto;
 
-  @ApiProperty({ type: () => MoneyDto })
-  maxVariantPrice!: MoneyDto;
+  @ApiProperty({ type: () => ProductReviewMoneyDto })
+  maxVariantPrice!: ProductReviewMoneyDto;
 }
 
-class SelectedOptionDto {
-  @ApiProperty()
+class ProductReviewSelectedOptionDto {
+  @ApiProperty({ type: String })
   name!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   value!: string;
 }
 
-class ProductVariantDto {
-  @ApiProperty()
+class ProductReviewVariantDto {
+  @ApiProperty({ type: String })
   id!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   title!: string;
 
   @ApiProperty({ type: String, nullable: true })
@@ -81,7 +87,7 @@ class ProductVariantDto {
   @ApiProperty({ type: String, nullable: true })
   barcode!: string | null;
 
-  @ApiProperty({ example: '19.99' })
+  @ApiProperty({ type: String, example: '19.99' })
   price!: string;
 
   @ApiProperty({ type: String, nullable: true })
@@ -90,63 +96,77 @@ class ProductVariantDto {
   @ApiProperty({ type: Number })
   inventoryQuantity!: number;
 
-  @ApiProperty()
-  inventoryPolicy!: string;
+  @ApiProperty({
+    type: String,
+    enum: ['DENY', 'CONTINUE'],
+    example: 'DENY',
+  })
+  inventoryPolicy!: 'DENY' | 'CONTINUE';
 
-  @ApiProperty({ type: () => [SelectedOptionDto] })
-  selectedOptions!: SelectedOptionDto[];
+  @ApiProperty({
+    type: () => [ProductReviewSelectedOptionDto],
+  })
+  selectedOptions!: ProductReviewSelectedOptionDto[];
 }
 
-class ProductVariantsDto {
-  @ApiProperty({ type: () => [ProductVariantDto] })
-  nodes!: ProductVariantDto[];
+class ProductReviewVariantsDto {
+  @ApiProperty({
+    type: () => [ProductReviewVariantDto],
+  })
+  nodes!: ProductReviewVariantDto[];
 }
 
-class ShopifyProductDto {
-  @ApiProperty()
+class ProductReviewProductDto {
+  @ApiProperty({ type: String })
   id!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   title!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   handle!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   description!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   descriptionHtml!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   vendor!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   productType!: string;
 
   @ApiProperty({ type: [String] })
   tags!: string[];
 
-  @ApiProperty({ enum: ['ACTIVE', 'ARCHIVED', 'DRAFT'] })
+  @ApiProperty({
+    type: String,
+    enum: ['ACTIVE', 'ARCHIVED', 'DRAFT', 'UNLISTED'],
+  })
   status!: ProductStatus;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   createdAt!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   updatedAt!: string;
 
   @ApiProperty({ type: String, nullable: true })
   publishedAt!: string | null;
 
-  @ApiProperty()
+  @ApiProperty({ type: Number })
   totalInventory!: number;
 
-  @ApiProperty({ type: () => ProductSeoDto })
-  seo!: ProductSeoDto;
+  @ApiProperty({ type: () => ProductReviewSeoDto })
+  seo!: ProductReviewSeoDto;
 
-  @ApiProperty({ type: () => ProductFeaturedMediaDto, nullable: true })
-  featuredMedia!: ProductFeaturedMediaDto | null;
+  @ApiProperty({
+    type: () => ProductReviewFeaturedMediaDto,
+    nullable: true,
+  })
+  featuredMedia!: ProductReviewFeaturedMediaDto | null;
 
   @ApiProperty({ type: String, nullable: true })
   onlineStoreUrl!: string | null;
@@ -154,49 +174,61 @@ class ShopifyProductDto {
   @ApiProperty({ type: String, nullable: true })
   onlineStorePreviewUrl!: string | null;
 
-  @ApiProperty({ type: () => PriceRangeDto })
-  priceRangeV2!: PriceRangeDto;
+  @ApiProperty({ type: () => ProductReviewPriceRangeDto })
+  priceRangeV2!: ProductReviewPriceRangeDto;
 
-  @ApiProperty({ type: () => ProductVariantsDto })
-  variants!: ProductVariantsDto;
+  @ApiProperty({ type: () => ProductReviewVariantsDto })
+  variants!: ProductReviewVariantsDto;
 }
 
-class AIReviewSeoDto {
-  @ApiProperty({ type: String, nullable: true })
+class ProductReviewAISeoDto {
+  @ApiProperty({
+    type: String,
+    nullable: true,
+  })
   title!: string | null;
 
-  @ApiProperty({ type: String, nullable: true })
+  @ApiProperty({
+    type: String,
+    nullable: true,
+  })
   metaDescription!: string | null;
 }
 
-class AIReviewInsightDto {
-  @ApiProperty()
+class ProductReviewAIInsightDto {
+  @ApiProperty({ type: String })
   title!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   description!: string;
 
   @ApiProperty({
-    enum: ['content', 'product', 'seo', 'inventory', 'pricing'],
+    type: String,
+    enum: ['content', 'inventory', 'seo', 'pricing', 'product'],
   })
-  category!: 'content' | 'product' | 'seo' | 'inventory' | 'pricing';
+  category!: 'content' | 'inventory' | 'seo' | 'pricing' | 'product';
 
-  @ApiProperty({ enum: ['low', 'medium', 'high'] })
+  @ApiProperty({
+    type: String,
+    enum: ['low', 'medium', 'high'],
+  })
   priority!: 'low' | 'medium' | 'high';
 }
 
-class ProductAIReviewDto {
-  @ApiProperty({ type: () => AIReviewSeoDto })
-  seo!: AIReviewSeoDto;
+class ProductReviewAIReviewDto {
+  @ApiProperty({ type: () => ProductReviewAISeoDto })
+  seo!: ProductReviewAISeoDto;
 
-  @ApiProperty({ type: () => [AIReviewInsightDto] })
-  insights!: AIReviewInsightDto[];
+  @ApiProperty({
+    type: () => [ProductReviewAIInsightDto],
+  })
+  insights!: ProductReviewAIInsightDto[];
 }
 
 export class ProductReviewResponse implements ProductReviewResponseDto {
-  @ApiProperty({ type: () => ShopifyProductDto })
+  @ApiProperty({ type: () => ProductReviewProductDto })
   product!: ShopifyProductNode;
 
-  @ApiProperty({ type: () => ProductAIReviewDto })
+  @ApiProperty({ type: () => ProductReviewAIReviewDto })
   aiReview!: ProductAIReview;
 }
