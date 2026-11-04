@@ -37,7 +37,7 @@ const navigation = [
     label: 'Overview',
     icon: LayoutDashboard,
     path: '/',
-    activePaths: ['/details'],
+    activePaths: ['/products'],
   },
   { label: 'Conversations', icon: MessageSquareText, path: '/conversations' },
   { label: 'AI Summaries', icon: Sparkles, path: '/summaries' },

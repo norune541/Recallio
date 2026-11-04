@@ -1,12 +1,8 @@
-import type { ElementType, ReactNode } from 'react';
 import {
   ArrowLeft,
   Check,
-  ChevronRight,
   CircleAlert,
-  Clock,
   ExternalLink,
-  Eye,
   Lightbulb,
   Package,
   Pencil,
@@ -21,122 +17,120 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-
-const product = {
-  id: 'gid://shopify/Product/8432074293311',
-  title: 'The Complete Snowboard',
-  vendor: 'Snowboard Co.',
-  productType: 'Snowboards',
-  status: 'ACTIVE',
-  sku: 'SB-COMP-001',
-  price: 699,
-  compareAtPrice: 849,
-  currency: 'USD',
-  inventory: 24,
-  variants: 4,
-  createdAt: 'October 2, 2026',
-  updatedAt: 'October 15, 2026',
-  description:
-    'The Complete Snowboard is designed for riders who want confidence on every run. Built with a lightweight core, responsive flex, and a durable base, it delivers reliable performance across a wide range of mountain conditions.',
-  variantsList: [
-    {
-      name: '155 cm',
-      sku: 'SB-COMP-155',
-      price: 699,
-      inventory: 8,
-      available: true,
-    },
-    {
-      name: '158 cm',
-      sku: 'SB-COMP-158',
-      price: 699,
-      inventory: 12,
-      available: true,
-    },
-    {
-      name: '161 cm',
-      sku: 'SB-COMP-161',
-      price: 699,
-      inventory: 4,
-      available: true,
-    },
-    {
-      name: '164 cm',
-      sku: 'SB-COMP-164',
-      price: 699,
-      inventory: 0,
-      available: false,
-    },
-  ],
-  tags: ['snowboard', 'winter', 'all-mountain', 'bestseller'],
-  seo: {
-    title: 'The Complete Snowboard | Snowboard Co.',
-    description:
-      'Shop the Complete Snowboard. Built for reliable performance and confidence on every run.',
-  },
-};
-
-const aiInsights = [
-  {
-    type: 'opportunity',
-    title: 'Improve the product description',
-    description:
-      'The description explains the general benefits, but lacks concrete specifications. Adding details about the core material, flex rating, and recommended rider level could help customers make a more informed decision.',
-    impact: 'Content quality',
-    icon: WandSparkles,
-  },
-  {
-    type: 'warning',
-    title: 'One variant is out of stock',
-    description:
-      'The 164 cm variant currently has zero units available. If this size is important to your customers, consider reviewing your replenishment plans.',
-    impact: 'Inventory',
-    icon: Warehouse,
-  },
-  {
-    type: 'opportunity',
-    title: 'Review your SEO metadata',
-    description:
-      'Your SEO title includes the product name and brand. Consider testing a more descriptive title that reflects the product’s main characteristics.',
-    impact: 'SEO',
-    icon: Eye,
-  },
-];
+import { useParams } from 'react-router-dom';
+import { useProduct } from '../hooks/getProduct';
+import type { ElementType, ReactNode } from 'react';
 
 const recentActivity = [
   {
     action: 'Product updated',
+
     description: 'Product description changed',
+
     date: 'Oct 15, 2026 · 2:34 PM',
   },
+
   {
     action: 'Inventory updated',
+
     description: 'Stock level changed to 24 units',
+
     date: 'Oct 14, 2026 · 11:12 AM',
   },
+
   {
     action: 'Product created',
+
     description: 'Product added to your Shopify catalog',
+
     date: 'Oct 2, 2026 · 9:45 AM',
   },
 ];
 
-function formatPrice(price: number) {
+function formatPrice(amount: string, currencyCode: string) {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: product.currency,
+    currency: currencyCode,
     maximumFractionDigits: 2,
-  }).format(price);
+  }).format(Number(amount));
 }
 
+function formatSmartUSDate(date: Date | number | string): string {
+  const targetDate = date instanceof Date ? date : new Date(date);
+  const now = new Date();
+
+  const startOfNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfTarget = new Date(
+    targetDate.getFullYear(),
+    targetDate.getMonth(),
+    targetDate.getDate(),
+  );
+
+  const diffTime = startOfTarget.getTime() - startOfNow.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  if (Math.abs(diffDays) <= 7) {
+    const rtf = new Intl.RelativeTimeFormat('en-US', { numeric: 'auto' });
+    return rtf.format(diffDays, 'day');
+  }
+
+  const options: Intl.DateTimeFormatOptions = {
+    month: 'short',
+    day: 'numeric',
+    ...(targetDate.getFullYear() !== now.getFullYear() && { year: 'numeric' }),
+  };
+
+  return new Intl.DateTimeFormat('en-US', options).format(targetDate);
+}
+
+const truncateText = (text: string, maxLength = 90) =>
+  text.length > maxLength ? `${text.slice(0, maxLength).trimEnd()}...` : text;
+
+const iconMap = {
+  content: WandSparkles,
+  inventory: CircleAlert,
+  seo: TrendingUp,
+  pricing: TrendingUp,
+  product: Package,
+};
+
+const colorMap = {
+  content: 'text-primary',
+  inventory: 'text-amber-500',
+  seo: 'text-emerald-600',
+  pricing: 'text-emerald-600',
+  product: 'text-primary',
+};
+
 export function GetProductDetailsPage() {
-  const inventoryPercentage = Math.min((product.inventory / 50) * 100, 100);
-  const variantsInStock = product.variantsList.filter(
-    (variant) => variant.inventory > 0,
-  ).length;
-  const outOfStockVariants = product.variantsList.filter(
-    (variant) => !variant.available,
-  ).length;
+  const { productId } = useParams();
+
+  if (!productId) {
+    window.history.back();
+  }
+
+  const { data, isPending, isError, error } = useProduct(productId!);
+
+  if (isPending) {
+    return <div>Loading</div>;
+  }
+
+  if (isError) {
+    return <div>Failed to load product: {error.message}</div>;
+  }
+
+  if (!data) {
+    return <div>Product not found</div>;
+  }
+
+  const { product, aiReview } = data;
+  const aiInsights = aiReview.insights;
+  const price = product.priceRangeV2.minVariantPrice;
+  const maxPrice = product.priceRangeV2.maxVariantPrice;
+  const inventoryPercentage = Math.min(
+    (product.totalInventory / 50) * 100,
+    100,
+  );
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-[1440px] space-y-5 pb-8 sm:space-y-7 sm:pb-10">
@@ -147,19 +141,13 @@ export function GetProductDetailsPage() {
           onClick={() => window.history.back()}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to products
+          Go back
         </Button>
 
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <Badge variant="outline" className="gap-1.5 font-normal">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            Synced with Shopify
-          </Badge>
-          <Button variant="outline" size="sm" className="min-h-9">
-            <ExternalLink className="mr-2 h-4 w-4" />
-            View in Shopify
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" className="min-h-9">
+          <ExternalLink className="mr-2 h-4 w-2" />
+          View in Shopify
+        </Button>
       </nav>
 
       <section className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
@@ -171,33 +159,30 @@ export function GetProductDetailsPage() {
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <Badge className="bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400">
-                Active
+                {product.status}
               </Badge>
-              <Badge variant="outline">{product.productType}</Badge>
+
+              <Badge variant="outline" className="p-2.5">
+                {product.productType}
+              </Badge>
             </div>
+
             <h1 className="break-words text-xl font-semibold tracking-tight sm:text-2xl lg:text-3xl">
               {product.title}
             </h1>
+
             <p className="break-words text-sm leading-5 text-muted-foreground">
               {product.vendor}
+
               <span className="mx-1.5">·</span>
-              SKU {product.sku}
+
+              {product.handle}
             </p>
+
             <p className="text-xs text-muted-foreground">
-              Updated {product.updatedAt}
+              Updated {formatSmartUSDate(product.updatedAt)}
             </p>
           </div>
-        </div>
-
-        <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:flex sm:shrink-0">
-          <Button variant="outline" className="min-h-10 px-3">
-            <Pencil className="mr-2 h-4 w-4" />
-            Edit product
-          </Button>
-          <Button className="min-h-10 px-3">
-            <Sparkles className="mr-2 h-4 w-4" />
-            Analyze with AI
-          </Button>
         </div>
       </section>
 
@@ -205,23 +190,23 @@ export function GetProductDetailsPage() {
 
       <section
         aria-label="Product metrics"
-        className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4"
+        className="grid grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4"
       >
         <MetricCard
           label="Current price"
-          value={formatPrice(product.price)}
-          description={`Compare-at: ${formatPrice(product.compareAtPrice)}`}
-          icon={Tag}
-          detail={
-            <Badge className="whitespace-normal bg-emerald-500/10 text-xs text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400">
-              {Math.round((1 - product.price / product.compareAtPrice) * 100)}%
-              below compare-at
-            </Badge>
+          value={formatPrice(price.amount, price.currencyCode)}
+          description={
+            price.amount === maxPrice.amount
+              ? 'Single price across variants'
+              : `Up to ${formatPrice(maxPrice.amount, maxPrice.currencyCode)}`
           }
+          icon={Tag}
+          detail="Lowest variant price"
         />
+
         <MetricCard
           label="Inventory"
-          value={`${product.inventory} units`}
+          value={`${product.totalInventory} units`}
           description="Across all variants"
           icon={Warehouse}
           detail={
@@ -232,88 +217,112 @@ export function GetProductDetailsPage() {
                   style={{ width: `${inventoryPercentage}%` }}
                 />
               </div>
+
               <p className="text-xs text-muted-foreground">
-                {variantsInStock} of {product.variants} in stock
+                Total inventory across product variants
               </p>
             </div>
           }
         />
+
         <MetricCard
           label="Variants"
-          value={String(product.variants)}
-          description="Sizes or options"
+          value={String(product.variants.nodes.length)}
+          description="Product variants"
           icon={Package}
           detail={
-            <p className="text-xs text-muted-foreground">
-              {outOfStockVariants} out of stock
-            </p>
+            <div className="space-y-1.5">
+              {product.variants.nodes.slice(0, 3).map((variant) => (
+                <div
+                  key={variant.id}
+                  className="flex items-center justify-between gap-2 text-xs"
+                >
+                  <span className="min-w-0 truncate text-muted-foreground">
+                    {variant.title}
+                  </span>
+                  <span className="shrink-0 font-medium">
+                    {formatPrice(variant.price, price.currencyCode)}
+                  </span>
+                </div>
+              ))}
+
+              {product.variants.nodes.length > 3 && (
+                <p className="text-xs text-muted-foreground">
+                  +{product.variants.nodes.length - 3} more variants
+                </p>
+              )}
+
+              {product.variants.nodes.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  No variants available
+                </p>
+              )}
+            </div>
           }
         />
+
         <MetricCard
           label="AI insights"
           value={String(aiInsights.length)}
           description="Suggested improvements"
           icon={Sparkles}
           detail={
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="h-3.5 w-3.5" />
-              Demo analysis
-            </span>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">High / Medium / Low</span>
+              <span className="font-medium">
+                {(['high', 'medium', 'low'] as const)
+                  .map((p) => aiInsights.filter((i) => i.priority === p).length)
+                  .join(' / ')}
+              </span>
+            </div>
           }
         />
       </section>
 
       <Card className="min-w-0 overflow-hidden border-primary/20">
         <div className="h-1 bg-primary/70" />
+
         <CardHeader className="p-4 sm:p-6">
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 sm:h-10 sm:w-10">
               <Sparkles className="h-5 w-5 text-primary" />
             </div>
+
             <div className="min-w-0 flex-1 space-y-1">
               <CardTitle className="text-base sm:text-lg">
                 Recallio AI briefing
               </CardTitle>
+
               <p className="text-sm text-muted-foreground">
                 A quick summary of this product and its main opportunities.
               </p>
             </div>
-            <Badge variant="outline" className="shrink-0">
-              Demo
-            </Badge>
           </div>
         </CardHeader>
+
         <CardContent className="space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
           <p className="text-sm leading-6 text-muted-foreground sm:leading-7">
-            <strong className="text-foreground">{product.title}</strong> is
-            active with {product.variants} variants and {product.inventory}{' '}
-            units in stock. One size is unavailable. The clearest opportunities
-            are adding specific product details and reviewing the SEO metadata.
+            <strong className="text-foreground">{product.title}</strong> has
+            &#32;
+            {product.totalInventory} units in inventory. The following
+            recommendations are based on the current AI review.
           </p>
+
           <div className="grid gap-2 sm:grid-cols-3 sm:gap-3">
-            <BriefingItem
-              icon={CircleAlert}
-              title="Inventory"
-              text="One variant is out of stock."
-              iconClass="text-amber-500"
-            />
-            <BriefingItem
-              icon={WandSparkles}
-              title="Content"
-              text="Add concrete product specifications."
-              iconClass="text-primary"
-            />
-            <BriefingItem
-              icon={TrendingUp}
-              title="SEO"
-              text="Review the title and meta description."
-              iconClass="text-emerald-600"
-            />
+            {aiReview.insights.slice(0, 3).map((insight, index) => {
+              const Icon = iconMap[insight.category];
+
+              return (
+                <BriefingItem
+                  key={`${insight.category}-${index}`}
+                  icon={Icon}
+                  title={insight.title}
+                  text={truncateText(insight.description, 90)}
+                  iconClass={colorMap[insight.category]}
+                />
+              );
+            })}
           </div>
-          <p className="text-xs leading-5 text-muted-foreground">
-            Illustrative recommendations based on mock data, not verified sales
-            predictions.
-          </p>
         </CardContent>
       </Card>
 
@@ -323,25 +332,35 @@ export function GetProductDetailsPage() {
             <CardHeader className="p-4 sm:p-6">
               <CardTitle className="text-base">Product information</CardTitle>
             </CardHeader>
+
             <CardContent className="space-y-4 px-4 pb-4 sm:space-y-5 sm:px-6 sm:pb-6">
               <InfoRow label="Product ID">
                 <span className="break-all font-mono text-xs">
                   {product.id}
                 </span>
               </InfoRow>
+
               <InfoRow label="Vendor">{product.vendor}</InfoRow>
               <InfoRow label="Product type">{product.productType}</InfoRow>
-              <InfoRow label="Created">{product.createdAt}</InfoRow>
-              <InfoRow label="Last updated">{product.updatedAt}</InfoRow>
+              <InfoRow label="Created">
+                {formatSmartUSDate(product.createdAt)}
+              </InfoRow>
+              <InfoRow label="Last updated">
+                {formatSmartUSDate(product.updatedAt)}
+              </InfoRow>
               <Separator />
+
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">Description</h3>
+
                 <p className="text-sm leading-6 text-muted-foreground">
                   {product.description}
                 </p>
               </div>
+
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">Tags</h3>
+
                 <div className="flex flex-wrap gap-2">
                   {product.tags.map((tag) => (
                     <Badge key={tag} variant="secondary">
@@ -354,123 +373,124 @@ export function GetProductDetailsPage() {
           </Card>
 
           <Card className="min-w-0">
-            <CardHeader className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-              <div>
-                <CardTitle className="text-base">Product variants</CardTitle>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Pricing and availability by size
-                </p>
-              </div>
-              <Badge variant="secondary" className="w-fit">
-                {product.variantsList.length} variants
-              </Badge>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base">Product variants</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Overview of product options, pricing and availability.
+              </p>
             </CardHeader>
-            <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
-              {/* Mobile: stacked cards avoid horizontal scrolling and tiny table columns. */}
-              <div className="space-y-3 md:hidden">
-                {product.variantsList.map((variant) => (
-                  <div key={variant.sku} className="rounded-xl border p-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-medium">{variant.name}</p>
-                        <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
-                          {variant.sku}
-                        </p>
-                      </div>
-                      {variant.available ? (
-                        <Badge className="shrink-0 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400">
-                          In stock
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive" className="shrink-0">
-                          Out of stock
-                        </Badge>
-                      )}
+
+            <CardContent className="space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
+              <p className="text-sm leading-6 text-muted-foreground">
+                <strong className="text-foreground">{product.title}</strong> has
+                &#32;
+                {product.variants.nodes.length} variants with &#32;
+                {product.totalInventory} units available across all options.
+              </p>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="rounded-lg border p-3">
+                  <p className="text-xs text-muted-foreground">Variants</p>
+                  <p className="mt-1 text-lg font-semibold">
+                    {product.variants.nodes.length}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border p-3">
+                  <p className="text-xs text-muted-foreground">Total stock</p>
+                  <p className="mt-1 text-lg font-semibold">
+                    {product.totalInventory}
+                  </p>
+                </div>
+
+                <div className="col-span-2 rounded-lg border p-3 sm:col-span-1">
+                  <p className="text-xs text-muted-foreground">Price range</p>
+                  <p className="mt-1 text-lg font-semibold">
+                    {formatPrice(
+                      product.priceRangeV2.minVariantPrice.amount,
+                      product.priceRangeV2.minVariantPrice.currencyCode,
+                    )}
+                    {' – '}
+                    {formatPrice(
+                      product.priceRangeV2.maxVariantPrice.amount,
+                      product.priceRangeV2.maxVariantPrice.currencyCode,
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {product.variants.nodes.map((variant) => (
+                  <div
+                    key={variant.id}
+                    className="flex items-center justify-between gap-3 rounded-lg border p-3"
+                  >
+                    <div className="min-w-0 space-y-1">
+                      <p className="truncate text-sm font-medium">
+                        {variant.title}
+                      </p>
+
+                      <p className="text-xs text-muted-foreground">
+                        {variant.selectedOptions
+                          .map((option) => `${option.name}: ${option.value}`)
+                          .join(' · ')}
+                      </p>
                     </div>
-                    <Separator className="my-3" />
-                    <div className="flex items-center justify-between gap-3 text-sm">
-                      <span className="text-muted-foreground">Price</span>
-                      <span className="font-medium">
-                        {formatPrice(variant.price)}
-                      </span>
-                    </div>
-                    <div className="mt-2 flex items-center justify-between gap-3 text-sm">
-                      <span className="text-muted-foreground">Stock</span>
-                      <span
-                        className={
-                          variant.inventory === 0
-                            ? 'font-medium text-destructive'
-                            : 'font-medium'
-                        }
+
+                    <div className="shrink-0 text-right">
+                      <p className="text-sm font-semibold">
+                        {formatPrice(
+                          variant.price,
+                          product.priceRangeV2.minVariantPrice.currencyCode,
+                        )}
+                      </p>
+                      <p
+                        className={`text-xs ${
+                          variant.inventoryQuantity > 0
+                            ? 'text-muted-foreground'
+                            : 'text-destructive'
+                        }`}
                       >
-                        {variant.inventory} units
-                      </span>
+                        {variant.inventoryQuantity > 0
+                          ? `${variant.inventoryQuantity} in stock`
+                          : 'Out of stock'}
+                      </p>
                     </div>
                   </div>
                 ))}
-              </div>
-
-              {/* Tablet/desktop: use a table when there is enough horizontal space. */}
-              <div className="hidden overflow-x-auto md:block">
-                <table className="w-full min-w-[560px] text-sm">
-                  <thead>
-                    <tr className="border-b text-left text-xs text-muted-foreground">
-                      <th className="pb-3 pr-4 font-medium">Variant</th>
-                      <th className="pb-3 pr-4 font-medium">SKU</th>
-                      <th className="pb-3 pr-4 font-medium">Price</th>
-                      <th className="pb-3 pr-4 font-medium">Stock</th>
-                      <th className="pb-3 font-medium">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {product.variantsList.map((variant) => (
-                      <tr key={variant.sku} className="border-b last:border-0">
-                        <td className="py-4 pr-4 font-medium">
-                          {variant.name}
-                        </td>
-                        <td className="break-all py-4 pr-4 font-mono text-xs text-muted-foreground">
-                          {variant.sku}
-                        </td>
-                        <td className="whitespace-nowrap py-4 pr-4">
-                          {formatPrice(variant.price)}
-                        </td>
-                        <td className="py-4 pr-4">{variant.inventory}</td>
-                        <td className="py-4">
-                          {variant.available ? (
-                            <Badge className="bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400">
-                              In stock
-                            </Badge>
-                          ) : (
-                            <Badge variant="destructive">Out of stock</Badge>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
             </CardContent>
           </Card>
 
           <Card className="min-w-0">
             <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="text-base">Search engine preview</CardTitle>
+              <CardTitle className="text-base">AI SEO suggestions</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Suggested improvements to help your product perform better in
+                search results.
+              </p>
             </CardHeader>
+
             <CardContent className="space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">SEO title</p>
+                <p className="text-xs text-muted-foreground">
+                  Suggested SEO title
+                </p>
                 <p className="break-words text-sm font-medium">
-                  {product.seo.title}
+                  {aiReview.seo.title || 'No title suggestion available'}
                 </p>
               </div>
+
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">
-                  Meta description
+                  Suggested meta description
                 </p>
                 <p className="break-words text-sm leading-6 text-muted-foreground">
-                  {product.seo.description}
+                  {aiReview.seo.metaDescription ||
+                    'No meta description suggestion available'}
                 </p>
               </div>
+
               <Button variant="outline" className="min-h-10 w-full">
                 <Sparkles className="mr-2 h-4 w-4" />
                 Improve SEO with AI
@@ -484,48 +504,49 @@ export function GetProductDetailsPage() {
             <CardHeader className="p-4 sm:p-6">
               <div className="flex items-center justify-between gap-3">
                 <CardTitle className="text-base">AI insights</CardTitle>
+
                 <Badge variant="secondary">{aiInsights.length}</Badge>
               </div>
+
               <p className="text-sm text-muted-foreground">
                 Suggested improvements for this product.
               </p>
             </CardHeader>
+
             <CardContent className="space-y-4 px-4 pb-4 sm:space-y-5 sm:px-6 sm:pb-6">
               {aiInsights.map((insight, index) => {
-                const Icon = insight.icon;
+                const Icon = iconMap[insight.category];
+
                 return (
                   <div key={insight.title} className="space-y-3">
                     <div className="flex items-start gap-3">
                       <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
                         <Icon className="h-4 w-4" />
                       </div>
+
                       <div className="min-w-0 flex-1 space-y-2">
                         <p className="text-sm font-medium leading-5">
                           {insight.title}
                         </p>
+
                         <p className="text-sm leading-6 text-muted-foreground">
                           {insight.description}
                         </p>
+
                         <Badge
                           variant="outline"
                           className="max-w-full whitespace-normal"
                         >
-                          {insight.impact}
+                          {insight.category} · {insight.priority}
                         </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="-ml-3 min-h-9 whitespace-normal text-left"
-                        >
-                          Review recommendation
-                          <ChevronRight className="ml-1 h-4 w-4 shrink-0" />
-                        </Button>
                       </div>
                     </div>
+
                     {index < aiInsights.length - 1 && <Separator />}
                   </div>
                 );
               })}
+
               <Button variant="outline" className="min-h-10 w-full">
                 <Lightbulb className="mr-2 h-4 w-4" />
                 Explore all insights
@@ -536,10 +557,12 @@ export function GetProductDetailsPage() {
           <Card>
             <CardHeader className="p-4 sm:p-6">
               <CardTitle className="text-base">Product activity</CardTitle>
+
               <p className="text-sm text-muted-foreground">
                 Recent changes to this product.
               </p>
             </CardHeader>
+
             <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
               <div className="space-y-4">
                 {recentActivity.map((activity, index) => (
@@ -554,38 +577,25 @@ export function GetProductDetailsPage() {
                           <Check className="h-3.5 w-3.5" />
                         )}
                       </div>
+
                       {index < recentActivity.length - 1 && (
                         <div className="absolute top-8 h-10 w-px bg-border" />
                       )}
                     </div>
+
                     <div className="min-w-0 space-y-1 pb-2">
                       <p className="text-sm font-medium">{activity.action}</p>
+
                       <p className="text-sm leading-5 text-muted-foreground">
                         {activity.description}
                       </p>
+
                       <p className="text-xs leading-5 text-muted-foreground">
                         {activity.date}
                       </p>
                     </div>
                   </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="flex items-start gap-3 p-4 sm:p-5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
-                <Check className="h-5 w-5 text-emerald-600" />
-              </div>
-              <div className="min-w-0 space-y-1">
-                <p className="text-sm font-medium">Shopify integration</p>
-                <p className="text-sm leading-6 text-muted-foreground">
-                  This product belongs to your connected Shopify store.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Last synced: Oct 17, 2026
-                </p>
               </div>
             </CardContent>
           </Card>
@@ -613,16 +623,20 @@ function MetricCard({
       <CardContent className="p-3.5 sm:p-5">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground sm:text-sm">{label}</p>
+
           <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
         </div>
+
         <div className="mt-2 space-y-1 sm:mt-3">
           <p className="break-words text-xl font-semibold tracking-tight sm:text-2xl">
             {value}
           </p>
+
           <p className="text-xs leading-5 text-muted-foreground">
             {description}
           </p>
         </div>
+
         <div className="mt-3 min-w-0 sm:mt-4">{detail}</div>
       </CardContent>
     </Card>
@@ -643,8 +657,10 @@ function BriefingItem({
   return (
     <div className="flex items-start gap-2.5 rounded-lg border p-3 sm:p-4">
       <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${iconClass}`} />
+
       <div className="min-w-0 space-y-1">
         <p className="text-sm font-medium">{title}</p>
+
         <p className="text-sm leading-5 text-muted-foreground">{text}</p>
       </div>
     </div>
@@ -655,6 +671,7 @@ function InfoRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="grid min-w-0 gap-1.5 sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-4">
       <p className="text-sm text-muted-foreground">{label}</p>
+
       <div className="min-w-0 text-sm">{children}</div>
     </div>
   );
