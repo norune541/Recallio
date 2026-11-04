@@ -42,6 +42,18 @@ The `ProductReview` model should contain:
 
 A product should have at most one current persisted review.
 
+## Product Listing
+
+The product listing flow has different persistence requirements.
+
+1. Retrieve products from Shopify.
+2. Retrieve existing ProductReview records in a batch query.
+3. Use persisted reviews where available.
+4. For products without a persisted review, generate an AI summary.
+5. Do not persist summaries generated exclusively for the listing.
+
+Listing-generated summaries are temporary and exist only for the current listing response.
+
 ## Consequences
 
 ### Positive
@@ -65,7 +77,8 @@ A product should have at most one current persisted review.
 - Handling changes to AI prompts or model versions.
 - Reanalysis when the review schema or analysis logic changes.
 - Handling concurrent analysis requests for the same product.
-as
+  as
+
 ## Implementation Trigger
 
 Revisit this decision when:
