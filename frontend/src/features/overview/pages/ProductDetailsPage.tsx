@@ -1,15 +1,10 @@
 import {
   ArrowLeft,
-  Check,
-  CircleAlert,
   ExternalLink,
   Lightbulb,
   Package,
-  Pencil,
   Sparkles,
   Tag,
-  TrendingUp,
-  WandSparkles,
   Warehouse,
 } from 'lucide-react';
 
@@ -18,107 +13,25 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useParams } from 'react-router-dom';
+
+import { formatSmartUSDate } from '@/common/utils/formatDate';
+import { formatPrice } from '@/common/utils/formatPrice';
+import { truncateText } from '@/common/utils/truncateText';
+import { iconMap, colorMap } from '@/common/utils/icons';
+
 import { useProduct } from '../hooks/getProduct';
 import type { ElementType, ReactNode } from 'react';
 
-const recentActivity = [
-  {
-    action: 'Product updated',
-
-    description: 'Product description changed',
-
-    date: 'Oct 15, 2026 · 2:34 PM',
-  },
-
-  {
-    action: 'Inventory updated',
-
-    description: 'Stock level changed to 24 units',
-
-    date: 'Oct 14, 2026 · 11:12 AM',
-  },
-
-  {
-    action: 'Product created',
-
-    description: 'Product added to your Shopify catalog',
-
-    date: 'Oct 2, 2026 · 9:45 AM',
-  },
-];
-
-function formatPrice(amount: string, currencyCode: string) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currencyCode,
-    maximumFractionDigits: 2,
-  }).format(Number(amount));
-}
-
-function formatSmartUSDate(date: Date | number | string): string {
-  const targetDate = date instanceof Date ? date : new Date(date);
-  const now = new Date();
-
-  const startOfNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startOfTarget = new Date(
-    targetDate.getFullYear(),
-    targetDate.getMonth(),
-    targetDate.getDate(),
-  );
-
-  const diffTime = startOfTarget.getTime() - startOfNow.getTime();
-  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-  if (Math.abs(diffDays) <= 7) {
-    const rtf = new Intl.RelativeTimeFormat('en-US', { numeric: 'auto' });
-    return rtf.format(diffDays, 'day');
-  }
-
-  const options: Intl.DateTimeFormatOptions = {
-    month: 'short',
-    day: 'numeric',
-    ...(targetDate.getFullYear() !== now.getFullYear() && { year: 'numeric' }),
-  };
-
-  return new Intl.DateTimeFormat('en-US', options).format(targetDate);
-}
-
-const truncateText = (text: string, maxLength = 90) =>
-  text.length > maxLength ? `${text.slice(0, maxLength).trimEnd()}...` : text;
-
-const iconMap = {
-  content: WandSparkles,
-  inventory: CircleAlert,
-  seo: TrendingUp,
-  pricing: TrendingUp,
-  product: Package,
-};
-
-const colorMap = {
-  content: 'text-primary',
-  inventory: 'text-amber-500',
-  seo: 'text-emerald-600',
-  pricing: 'text-emerald-600',
-  product: 'text-primary',
-};
-
 export function GetProductDetailsPage() {
   const { productId } = useParams();
-
-  if (!productId) {
-    window.history.back();
-  }
-
   const { data, isPending, isError, error } = useProduct(productId!);
 
   if (isPending) {
     return <div>Loading</div>;
   }
-
   if (isError) {
     return <div>Failed to load product: {error.message}</div>;
   }
-
   if (!data) {
     return <div>Product not found</div>;
   }
@@ -420,44 +333,64 @@ export function GetProductDetailsPage() {
               </div>
 
               <div className="space-y-2">
-                {product.variants.nodes.map((variant) => (
-                  <div
-                    key={variant.id}
-                    className="flex items-center justify-between gap-3 rounded-lg border p-3"
-                  >
-                    <div className="min-w-0 space-y-1">
-                      <p className="truncate text-sm font-medium">
-                        {variant.title}
-                      </p>
+                {product.variants.nodes.map((variant) => {
+                  const isOutOfStock = variant.inventoryQuantity <= 0;
+                  const isLowStock =
+                    variant.inventoryQuantity > 0 &&
+                    variant.inventoryQuantity <= 5;
 
-                      <p className="text-xs text-muted-foreground">
-                        {variant.selectedOptions
-                          .map((option) => `${option.name}: ${option.value}`)
-                          .join(' · ')}
-                      </p>
-                    </div>
+                  const borderColor = isOutOfStock
+                    ? 'border-red-500'
+                    : isLowStock
+                      ? 'border-orange-500'
+                      : 'border-[#908fff]';
 
-                    <div className="shrink-0 text-right">
-                      <p className="text-sm font-semibold">
-                        {formatPrice(
-                          variant.price,
-                          product.priceRangeV2.minVariantPrice.currencyCode,
-                        )}
-                      </p>
-                      <p
-                        className={`text-xs ${
-                          variant.inventoryQuantity > 0
-                            ? 'text-muted-foreground'
-                            : 'text-destructive'
-                        }`}
-                      >
-                        {variant.inventoryQuantity > 0
-                          ? `${variant.inventoryQuantity} in stock`
-                          : 'Out of stock'}
-                      </p>
+                  const textColor = isOutOfStock
+                    ? 'text-red-600'
+                    : isLowStock
+                      ? 'text-orange-600'
+                      : 'text-[#908fff]';
+
+                  const backgroundColor = isOutOfStock
+                    ? 'bg-red-500/1'
+                    : isLowStock
+                      ? 'bg-orange-500/1'
+                      : 'bg-[#908fff]/1';
+
+                  return (
+                    <div
+                      key={variant.id}
+                      className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${borderColor} ${backgroundColor}`}
+                    >
+                      <div className="min-w-0 space-y-1">
+                        <p className="truncate text-sm font-medium">
+                          {variant.title}
+                        </p>
+
+                        <p className="text-xs text-muted-foreground">
+                          {variant.selectedOptions
+                            .map((option) => `${option.name}: ${option.value}`)
+                            .join(' · ')}
+                        </p>
+                      </div>
+
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-semibold">
+                          {formatPrice(
+                            variant.price,
+                            product.priceRangeV2.minVariantPrice.currencyCode,
+                          )}
+                        </p>
+
+                        <p className={`text-xs font-medium ${textColor}`}>
+                          {isOutOfStock
+                            ? 'Out of stock'
+                            : `${variant.inventoryQuantity} in stock`}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -520,8 +453,10 @@ export function GetProductDetailsPage() {
                 return (
                   <div key={insight.title} className="space-y-3">
                     <div className="flex items-start gap-3">
-                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-                        <Icon className="h-4 w-4" />
+                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
+                        <Icon
+                          className={`h-4 w-4 ${colorMap[insight.category]}`}
+                        />
                       </div>
 
                       <div className="min-w-0 flex-1 space-y-2">
@@ -553,52 +488,6 @@ export function GetProductDetailsPage() {
               </Button>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="text-base">Product activity</CardTitle>
-
-              <p className="text-sm text-muted-foreground">
-                Recent changes to this product.
-              </p>
-            </CardHeader>
-
-            <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
-              <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div key={activity.action} className="relative flex gap-3">
-                    <div className="relative flex shrink-0 flex-col items-center">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full border bg-background">
-                        {index === 0 ? (
-                          <Pencil className="h-3.5 w-3.5" />
-                        ) : index === 1 ? (
-                          <Package className="h-3.5 w-3.5" />
-                        ) : (
-                          <Check className="h-3.5 w-3.5" />
-                        )}
-                      </div>
-
-                      {index < recentActivity.length - 1 && (
-                        <div className="absolute top-8 h-10 w-px bg-border" />
-                      )}
-                    </div>
-
-                    <div className="min-w-0 space-y-1 pb-2">
-                      <p className="text-sm font-medium">{activity.action}</p>
-
-                      <p className="text-sm leading-5 text-muted-foreground">
-                        {activity.description}
-                      </p>
-
-                      <p className="text-xs leading-5 text-muted-foreground">
-                        {activity.date}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
         </aside>
       </div>
     </div>
@@ -619,7 +508,7 @@ function MetricCard({
   detail: ReactNode;
 }) {
   return (
-    <Card className="min-w-0">
+    <Card className="min-w-0 transition-shadow hover:shadow-md">
       <CardContent className="p-3.5 sm:p-5">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground sm:text-sm">{label}</p>
