@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import {
   ArrowLeft,
   ExternalLink,
@@ -19,15 +20,25 @@ import { formatPrice } from '@/common/utils/formatPrice';
 import { truncateText } from '@/common/utils/truncateText';
 import { iconMap, colorMap } from '@/common/utils/icons';
 
+import { ProductDetailsSkeleton } from '../components/ProductDetailsSkeleton';
+
 import { useProduct } from '../hooks/getProduct';
 import type { ElementType, ReactNode } from 'react';
 
 export function GetProductDetailsPage() {
   const { productId } = useParams();
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'instant',
+    });
+  }, [productId]);
+
   const { data, isPending, isError, error } = useProduct(productId!);
 
   if (isPending) {
-    return <div>Loading</div>;
+    return <ProductDetailsSkeleton />;
   }
   if (isError) {
     return <div>Failed to load product: {error.message}</div>;
