@@ -10,6 +10,7 @@ import { NotFoundPage } from './common/pages/NotFoundPage';
 import { OverviewPage } from './features/overview/pages/OverviewPage';
 import { GetProductDetailsPage } from './features/overview/pages/ProductDetailsPage';
 import AppLayout from './AppLayout';
+import { IntegrationsPage } from './features/integrations/IntegrationsPage';
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/" element={<AppLayout />}>
               <Route index element={<OverviewPage />}></Route>
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/integrations" element={<IntegrationsPage />} />
               <Route
                 path="/products/:productId"
                 element={<GetProductDetailsPage />}
