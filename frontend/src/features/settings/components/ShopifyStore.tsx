@@ -18,7 +18,7 @@ import { ConnectShopDialog } from './ConnectShopDialog';
 import { LoadingShopSkeleton } from './LoadingShopSkeleton';
 
 import { useIsMobile } from '@/common/hooks/use-mobile';
-import { useShopify } from '../hooks/getShopify';
+import { useShopify } from '../../../common/hooks/getShopify';
 import { useConnectShopify } from '../hooks/connectShopify';
 
 export function ShopifyStore() {

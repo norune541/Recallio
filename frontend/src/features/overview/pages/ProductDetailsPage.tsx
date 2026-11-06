@@ -35,16 +35,14 @@ export function GetProductDetailsPage() {
     });
   }, [productId]);
 
-  const { data, isPending, isError, error } = useProduct(productId!);
+  const { data, isPending, isError } = useProduct(productId!);
 
   if (isPending) {
     return <ProductDetailsSkeleton />;
   }
-  if (isError) {
-    return <div>Failed to load product: {error.message}</div>;
-  }
-  if (!data) {
-    return <div>Product not found</div>;
+  if (isError || !data) {
+    window.history.back();
+    return;
   }
 
   const { product, aiReview } = data;

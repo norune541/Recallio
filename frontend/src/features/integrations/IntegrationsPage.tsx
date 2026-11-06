@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
-import { useShopify } from '@/features/settings/hooks/getShopify';
+import { useShopify } from '@/common/hooks/getShopify';
 import { useConnectShopify } from '@/features/settings/hooks/connectShopify';
 
 import { RemoveStoreDialog } from '@/features/settings/components/RemoveStore';

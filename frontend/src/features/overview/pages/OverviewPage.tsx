@@ -18,7 +18,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
+import { useShopify } from '@/common/hooks/getShopify';
+
 import { ProductIntelligence } from '../components/CatalogComponent';
+import { ShopNotConnectedMainComponent } from '@/components/ShopNotConnectedMainComponent';
+import { OverviewSkeleton } from '../components/OverviewSkeleton';
 
 const stats = [
   {
@@ -90,11 +94,23 @@ const weeklyActivity = [
   { day: 'Sun', value: 69 },
 ];
 
-// ============================================================
-// Main component
-// ============================================================
-
 export function OverviewPage() {
+  const { isPending, isError, error } = useShopify();
+
+  if (isPending) {
+    return <OverviewSkeleton />;
+  }
+
+  if (
+    isError &&
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    error.code === 'SHOP_NOT_FOUND'
+  ) {
+    return <ShopNotConnectedMainComponent />;
+  }
+
   return (
     <div className="space-y-8 pb-8">
       {/* ======================================================
