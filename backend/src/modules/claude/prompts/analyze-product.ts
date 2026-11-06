@@ -58,11 +58,15 @@ INSIGHTS:
   - description: explanation of why it matters and what action to take.
   - category: one of content, inventory, seo, pricing, product.
   - priority: low, medium, or high.
+- ALWAYS begin every insight title with the exact product title provided in the input.
+- Use this format: "[Product Title] — [Short description of the issue]".
+- Do not omit, abbreviate, or modify the product title.
+- The product title must appear at the very beginning of the insight title.
 - Use high priority only for significant issues.
 - Use medium priority for issues worth addressing.
 - Use low priority for minor improvements.
 - If there are no meaningful issues, return an empty array.
-- Maximum number of insights is three
+- Maximum number of insights is three.
 
 SEO OUTPUT:
 - Return seo.title and seo.metaDescription.

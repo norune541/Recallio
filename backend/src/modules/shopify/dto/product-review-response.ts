@@ -233,7 +233,7 @@ class ProductReviewAIInsightDto {
   priority!: 'low' | 'medium' | 'high';
 }
 
-class ProductReviewAIReviewDto {
+export class ProductReviewAIReviewDto {
   @ApiProperty({ type: () => ProductReviewAISeoDto })
   seo!: ProductReviewAISeoDto;
 

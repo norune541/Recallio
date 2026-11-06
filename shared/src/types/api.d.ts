@@ -210,6 +210,22 @@ export interface components {
              */
             error: string;
         };
+        ProductReviewAISeoDto: {
+            title: string | null;
+            metaDescription: string | null;
+        };
+        ProductReviewAIInsightDto: {
+            title: string;
+            description: string;
+            /** @enum {string} */
+            category: "content" | "inventory" | "seo" | "pricing" | "product";
+            /** @enum {string} */
+            priority: "low" | "medium" | "high";
+        };
+        ProductReviewAIReviewDto: {
+            seo: components["schemas"]["ProductReviewAISeoDto"];
+            insights: components["schemas"]["ProductReviewAIInsightDto"][];
+        };
         ShopifyImageDto: {
             /**
              * @description Image URL
@@ -346,6 +362,7 @@ export interface components {
             endCursor: string | null;
         };
         ShopifyProductsResponseDto: {
+            aiReview: components["schemas"]["ProductReviewAIReviewDto"];
             /** @description List of Shopify products */
             items: components["schemas"]["ShopifyProductDto"][];
             /** @description Pagination information */
@@ -444,22 +461,6 @@ export interface components {
             onlineStorePreviewUrl: string | null;
             priceRangeV2: components["schemas"]["ProductReviewPriceRangeDto"];
             variants: components["schemas"]["ProductReviewVariantsDto"];
-        };
-        ProductReviewAISeoDto: {
-            title: string | null;
-            metaDescription: string | null;
-        };
-        ProductReviewAIInsightDto: {
-            title: string;
-            description: string;
-            /** @enum {string} */
-            category: "content" | "inventory" | "seo" | "pricing" | "product";
-            /** @enum {string} */
-            priority: "low" | "medium" | "high";
-        };
-        ProductReviewAIReviewDto: {
-            seo: components["schemas"]["ProductReviewAISeoDto"];
-            insights: components["schemas"]["ProductReviewAIInsightDto"][];
         };
         ProductReviewResponse: {
             shop: components["schemas"]["ProductReviewShopDto"];

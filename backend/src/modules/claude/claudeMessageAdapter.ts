@@ -41,4 +41,45 @@ export class ClaudeMessageAdapter {
 
     return response.parsed_output;
   }
+
+  async analyzeProducts(
+    products: ShopifyProductNode[],
+  ): Promise<ProductAIReview> {
+    const productsToAnalyze = products.slice(0, 3);
+
+    const reviews = await Promise.all(
+      productsToAnalyze.map((product) => this.analyzeProduct(product)),
+    );
+
+    const priority = { high: 3, medium: 2, low: 1 };
+
+    const sortedReviews = reviews
+      .map((review, index) => ({ review, index }))
+      .sort((a, b) => {
+        const aPriority = Math.max(
+          0,
+          ...a.review.insights.map((i) => priority[i.priority]),
+        );
+
+        const bPriority = Math.max(
+          0,
+          ...b.review.insights.map((i) => priority[i.priority]),
+        );
+
+        return bPriority - aPriority;
+      });
+
+    const selectedReview = sortedReviews[0]?.review;
+
+    return {
+      seo: selectedReview?.seo ?? {
+        title: '',
+        metaDescription: '',
+      },
+      insights: sortedReviews
+        .flatMap(({ review }) => review.insights)
+        .sort((a, b) => priority[b.priority] - priority[a.priority])
+        .slice(0, 3),
+    };
+  }
 }

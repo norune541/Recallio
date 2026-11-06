@@ -8,6 +8,7 @@ import { createShopifyGraphqlClient } from '../../shopify-api.client.js';
 import { GetValidShopifyAccessTokenUseCase } from '../auth/get-valid-shopify-access-token.use-case.js';
 
 import { ShopifyDao } from '../../dao/shopify.dao.js';
+import { ClaudeMessageAdapter } from 'backend/src/modules/claude/claudeMessageAdapter.js';
 
 import { UserNotFoundException } from 'backend/src/modules/user/dto/UserNotFound.dto.js';
 import { ShopNotFoundException } from '../../dto/shop-notFound.dto.js';
@@ -120,6 +121,7 @@ export class GetProductsUseCase {
   constructor(
     private readonly shopifyDao: ShopifyDao,
     private readonly getValidToken: GetValidShopifyAccessTokenUseCase,
+    private readonly claudeAdapter: ClaudeMessageAdapter,
   ) {}
 
   async execute(
@@ -158,8 +160,14 @@ export class GetProductsUseCase {
           errors.message ?? 'Shopify GraphQL request failed',
         );
       }
+      if (!data) {
+        throw new BadGatewayException('Failed to retrieve Shopify products');
+      }
 
+      const ai = await this.claudeAdapter.analyzeProducts(data?.products.nodes);
+      console.log(ai);
       return {
+        aiReview: ai,
         items: data?.products.nodes ?? [],
         pageInfo: data?.products.pageInfo ?? {
           hasNextPage: false,

@@ -10,6 +10,7 @@ type ProductsError =
 
 export function useProducts(limit = 10) {
   return useInfiniteQuery<P['ShopifyProductsResponseDto'], ProductsError>({
+    staleTime: 5 * 60 * 1000,
     queryKey: ['products', { limit }],
     initialPageParam: null as string | null,
 
