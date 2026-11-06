@@ -55,22 +55,27 @@ export function GetProductDetailsPage() {
     (product.totalInventory / 50) * 100,
     100,
   );
+  const productUrl =
+    data.product.onlineStoreUrl ??
+    `${data.shop.primaryDomain?.url}/products/${data.product.handle}`;
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-[1440px] space-y-5 pb-8 sm:space-y-7 sm:pb-10">
       <nav className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Button
-          variant="ghost"
-          className="-ml-3 min-h-10 w-fit text-muted-foreground"
+          variant="link"
+          className="-ml-3 min-h-9 w-auto text-muted-foreground cursor-pointer"
           onClick={() => window.history.back()}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Go back
         </Button>
 
-        <Button variant="outline" size="sm" className="min-h-9">
-          <ExternalLink className="mr-2 h-4 w-2" />
-          View in Shopify
+        <Button variant="link" size="sm" className="min-h-9 cursor-pointer">
+          <a href={productUrl} className="flex w-fit items-center">
+            <ExternalLink className="mr-2 h-4 w-4 shrink-0" />
+            View in Shopify
+          </a>
         </Button>
       </nav>
 

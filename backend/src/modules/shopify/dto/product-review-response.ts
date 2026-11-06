@@ -8,9 +8,27 @@ import type {
 import type { ProductAIReview } from '../../claude/dto/product-review.js';
 
 export type ProductReviewResponseDto = {
+  shop: {
+    primaryDomain: {
+      url: string;
+    } | null;
+  };
   product: ShopifyProductNode;
   aiReview: ProductAIReview;
 };
+
+class ProductReviewShopDomainDto {
+  @ApiProperty({ type: String })
+  url!: string;
+}
+
+class ProductReviewShopDto {
+  @ApiProperty({
+    type: () => ProductReviewShopDomainDto,
+    nullable: true,
+  })
+  primaryDomain!: ProductReviewShopDomainDto | null;
+}
 
 class ProductReviewSeoDto {
   @ApiProperty({ type: String, nullable: true })
@@ -226,6 +244,9 @@ class ProductReviewAIReviewDto {
 }
 
 export class ProductReviewResponse implements ProductReviewResponseDto {
+  @ApiProperty({ type: () => ProductReviewShopDto })
+  shop!: ProductReviewResponseDto['shop'];
+
   @ApiProperty({ type: () => ProductReviewProductDto })
   product!: ShopifyProductNode;
 

@@ -368,6 +368,12 @@ export interface components {
              */
             error: string;
         };
+        ProductReviewShopDomainDto: {
+            url: string;
+        };
+        ProductReviewShopDto: {
+            primaryDomain: components["schemas"]["ProductReviewShopDomainDto"] | null;
+        };
         ProductReviewSeoDto: {
             title: string | null;
             description: string | null;
@@ -456,6 +462,7 @@ export interface components {
             insights: components["schemas"]["ProductReviewAIInsightDto"][];
         };
         ProductReviewResponse: {
+            shop: components["schemas"]["ProductReviewShopDto"];
             product: components["schemas"]["ProductReviewProductDto"];
             aiReview: components["schemas"]["ProductReviewAIReviewDto"];
         };

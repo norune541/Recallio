@@ -18,17 +18,26 @@ import type { ProductReviewResponseDto } from 'backend/src/modules/shopify/dto/p
 import type { ShopifyProductNode } from 'backend/src/common/types/products.js';
 
 type ShopifyProductData = {
+  shop: {
+    primaryDomain: {
+      url: string;
+    } | null;
+  };
   product: ShopifyProductNode | null;
 };
 
 const PRODUCT_QUERY = `#graphql
   query GetProduct($id: ID!) {
+    shop {
+      primaryDomain {
+        url
+      }
+    }
     product(id: $id) {
       id
       title
       handle
       description
-      descriptionHtml
       vendor
       productType
       tags
@@ -137,6 +146,7 @@ export class AnalyzeProductUseCase {
       const aiReview = await this.claudeAdapter.analyzeProduct(data.product);
 
       return {
+        shop: data.shop,
         product: data.product,
         aiReview,
       };
