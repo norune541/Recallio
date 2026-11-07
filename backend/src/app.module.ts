@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 
 import { HealthModule } from './modules/health/health.module.js';
@@ -14,6 +15,7 @@ import { envSchema } from './config/env.js';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     HealthModule,
     ConfigModule.forRoot({
       isGlobal: true,
