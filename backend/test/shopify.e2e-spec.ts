@@ -8,7 +8,7 @@ import { ShopifyDao } from 'backend/src/modules/shopify/dao/shopify.dao.js';
 import { DeleteShop } from 'backend/src/modules/shopify/use-cases/shop/delete-shop.use-case.js';
 import { BeginShopifyAuthUseCase } from 'backend/src/modules/shopify/use-cases/auth/begin-shopify-auth.use-case.js';
 import { CompleteShopifyAuthUseCase } from 'backend/src/modules/shopify/use-cases/auth/complete-shopify-auth.use-case.js';
-import { GetProductsUseCase } from 'backend/src/modules/shopify/use-cases/shop/get-products.js';
+import { GetProductsUseCase } from 'backend/src/modules/shopify/sync/analyze-products.sync.js';
 import { GetShopUseCase } from 'backend/src/modules/shopify/use-cases/shop/get-shop.js';
 
 import { ShopifyController } from 'backend/src/modules/shopify/shopify.controller.js';

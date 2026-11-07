@@ -103,11 +103,26 @@ model Product {
   syncedAt        DateTime @default(now()) @db.Timestamptz(3)
   recordUpdatedAt DateTime @updatedAt @db.Timestamptz(3)
 
-  shop     ShopifyShop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  variants ProductVariant[]
+  shop          ShopifyShop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  variants      ProductVariant[]
+  productReview ProductReview?
 
   @@unique([shopId, shopifyProductId])
   @@index([shopId, updatedAt])
+}
+
+model ProductReview {
+  id        String @id @default(uuid()) @db.Uuid
+  productId String @unique @db.Uuid
+
+  seoTitle           String
+  seoMetaDescription String @db.Text
+  insights           Json
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 }
 
 model ProductVariant {
