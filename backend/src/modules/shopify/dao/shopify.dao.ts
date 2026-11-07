@@ -178,7 +178,7 @@ export class ShopifyDao {
   }
 
   async findShopByUserId(userId: string) {
-    const membership = await this.prisma.shopMember.findUnique({
+    const membership = await this.prisma.shopMember.findFirst({
       where: {
         userId,
         shop: {
