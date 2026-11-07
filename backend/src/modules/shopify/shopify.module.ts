@@ -8,8 +8,9 @@ import { BeginShopifyAuthUseCase } from './use-cases/auth/begin-shopify-auth.use
 import { CompleteShopifyAuthUseCase } from './use-cases/auth/complete-shopify-auth.use-case.js';
 import { GetValidShopifyAccessTokenUseCase } from './use-cases/auth/get-valid-shopify-access-token.use-case.js';
 import { RefreshShopifyAccessTokenUseCase } from './use-cases/auth/refresh-shopify-access-token.use-case.js';
-import { GetProductsUseCase } from './use-cases/shop/get-products.js';
-import { AnalyzeProductUseCase } from './use-cases/shop/get-product.js';
+import { AnalyzeProductsUseCase } from './sync/analyze-products.sync.js';
+import { AnalyzeProductUseCase } from './sync/analyze-product.sync.js';
+import { ShopifySyncProvider } from './providers/shopify-sync.provider.js';
 import { GetShopUseCase } from './use-cases/shop/get-shop.js';
 import { DeleteShop } from './use-cases/shop/delete-shop.use-case.js';
 import { ClaudeModule } from '../claude/claude.module.js';
@@ -18,6 +19,7 @@ import { ClaudeModule } from '../claude/claude.module.js';
   imports: [ClaudeModule],
   controllers: [ShopifyController],
   providers: [
+    ShopifySyncProvider,
     ShopifyDao,
     ShopifyApiClient,
     ShopifyOAuthUtils,
@@ -25,7 +27,7 @@ import { ClaudeModule } from '../claude/claude.module.js';
     CompleteShopifyAuthUseCase,
     GetValidShopifyAccessTokenUseCase,
     RefreshShopifyAccessTokenUseCase,
-    GetProductsUseCase,
+    AnalyzeProductsUseCase,
     GetShopUseCase,
     DeleteShop,
     AnalyzeProductUseCase,

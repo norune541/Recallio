@@ -45,8 +45,8 @@ import { UserNotFoundDto } from '../user/dto/UserNotFound.dto.js';
 
 import { BeginShopifyAuthUseCase } from './use-cases/auth/begin-shopify-auth.use-case.js';
 import { CompleteShopifyAuthUseCase } from './use-cases/auth/complete-shopify-auth.use-case.js';
-import { GetProductsUseCase } from './use-cases/shop/get-products.js';
-import { AnalyzeProductUseCase } from './use-cases/shop/get-product.js';
+import { AnalyzeProductsUseCase } from './sync/analyze-products.sync.js';
+import { AnalyzeProductUseCase } from './sync/analyze-product.sync.js';
 
 import { GetShopUseCase } from './use-cases/shop/get-shop.js';
 import { DeleteShop } from './use-cases/shop/delete-shop.use-case.js';
@@ -62,7 +62,7 @@ export class ShopifyController {
   constructor(
     private readonly beginShopifyAuth: BeginShopifyAuthUseCase,
     private readonly completeShopifyAuth: CompleteShopifyAuthUseCase,
-    private readonly getProductsUseCase: GetProductsUseCase,
+    private readonly getProductsUseCase: AnalyzeProductsUseCase,
     private readonly getShopUseCase: GetShopUseCase,
     private readonly deleteShop: DeleteShop,
     private readonly analyzeProduct: AnalyzeProductUseCase,

@@ -1,6 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ProductReviewAIReviewDto } from './product-review-response.js';
-import type { ProductAIReview } from '../../claude/dto/product-review.js';
 
 export class ShopifyMoneyDto {
   @ApiProperty({
@@ -196,9 +194,6 @@ export class ShopifyPageInfoDto {
 }
 
 export class ShopifyProductsResponseDto {
-  @ApiProperty({ type: () => ProductReviewAIReviewDto })
-  aiReview!: ProductAIReview;
-
   @ApiProperty({
     type: [ShopifyProductDto],
     description: 'List of Shopify products',

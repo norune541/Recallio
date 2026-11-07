@@ -6,13 +6,9 @@ import {
 } from '@nestjs/common';
 import { GraphqlQueryError } from '@shopify/shopify-api';
 
-import { createShopifyGraphqlClient } from '../../shopify-api.client.js';
-import { GetValidShopifyAccessTokenUseCase } from '../auth/get-valid-shopify-access-token.use-case.js';
+import { createShopifyGraphqlClient } from '../shopify-api.client.js';
+import { GetValidShopifyAccessTokenUseCase } from '../use-cases/auth/get-valid-shopify-access-token.use-case.js';
 import { ClaudeMessageAdapter } from 'backend/src/modules/claude/claudeMessageAdapter.js';
-
-import { ShopifyDao } from '../../dao/shopify.dao.js';
-import { UserNotFoundException } from 'backend/src/modules/user/dto/UserNotFound.dto.js';
-import { ShopNotFoundException } from '../../dto/shop-notFound.dto.js';
 
 import type { ProductReviewResponseDto } from 'backend/src/modules/shopify/dto/product-review-response.js';
 import type { ShopifyProductNode } from 'backend/src/common/types/products.js';
@@ -38,6 +34,7 @@ const PRODUCT_QUERY = `#graphql
       title
       handle
       description
+      descriptionHtml
       vendor
       productType
       tags
@@ -99,30 +96,19 @@ const PRODUCT_QUERY = `#graphql
 @Injectable()
 export class AnalyzeProductUseCase {
   constructor(
-    private readonly shopifyDao: ShopifyDao,
     private readonly getValidToken: GetValidShopifyAccessTokenUseCase,
     private readonly claudeAdapter: ClaudeMessageAdapter,
   ) {}
 
   async execute(
-    email: string,
+    shopDomain: string,
     productId: string,
   ): Promise<ProductReviewResponseDto> {
-    const user = await this.shopifyDao.findUserIdByEmail(email);
-    if (!user) {
-      throw new UserNotFoundException();
-    }
-
-    const shop = await this.shopifyDao.findShopByUserId(user.id);
-    if (!shop) {
-      throw new ShopNotFoundException();
-    }
-
-    const accessToken = await this.getValidToken.execute(shop.shopDomain);
+    const accessToken = await this.getValidToken.execute(shopDomain);
 
     try {
       const client = createShopifyGraphqlClient(
-        shop.shopDomain,
+        shopDomain,
         accessToken,
         'read_products',
       );
@@ -143,6 +129,7 @@ export class AnalyzeProductUseCase {
       if (!data?.product) {
         throw new NotFoundException('Shopify product not found');
       }
+
       const aiReview = await this.claudeAdapter.analyzeProduct(data.product);
 
       return {
