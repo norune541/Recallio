@@ -6,6 +6,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Query,
   Req,
   Res,
@@ -24,6 +25,7 @@ import {
   ApiConflictResponse,
   ApiOkResponse,
   ApiForbiddenResponse,
+  ApiParam,
 } from '@nestjs/swagger';
 
 import { ClerkAuthGuard } from '../../common/clerk-auth.guard.js';
@@ -43,12 +45,14 @@ import { UserNotFoundDto } from '../user/dto/UserNotFound.dto.js';
 
 import { BeginShopifyAuthUseCase } from './use-cases/auth/begin-shopify-auth.use-case.js';
 import { CompleteShopifyAuthUseCase } from './use-cases/auth/complete-shopify-auth.use-case.js';
-import { GetProductsUseCase } from './use-cases/shop/get-products.js';
+import { AnalyzeProductsUseCase } from './sync/analyze-products.sync.js';
+import { AnalyzeProductUseCase } from './sync/analyze-product.sync.js';
+
 import { GetShopUseCase } from './use-cases/shop/get-shop.js';
 import { DeleteShop } from './use-cases/shop/delete-shop.use-case.js';
 
 import { getProductsSchema } from '@recallio/shared/schemas';
-
+import { ProductReviewResponse } from './dto/product-review-response.js';
 import type { getProductsType } from '@recallio/shared/schemas';
 import type { Request, Response } from 'express';
 
@@ -58,9 +62,10 @@ export class ShopifyController {
   constructor(
     private readonly beginShopifyAuth: BeginShopifyAuthUseCase,
     private readonly completeShopifyAuth: CompleteShopifyAuthUseCase,
-    private readonly getProductsUseCase: GetProductsUseCase,
+    private readonly getProductsUseCase: AnalyzeProductsUseCase,
     private readonly getShopUseCase: GetShopUseCase,
     private readonly deleteShop: DeleteShop,
+    private readonly analyzeProduct: AnalyzeProductUseCase,
   ) {}
 
   /**
@@ -175,6 +180,47 @@ export class ShopifyController {
       req.user.emailAddresses[0].emailAddress,
       parsedQuery.data.limit,
       parsedQuery.data.after,
+    );
+  }
+
+  @Get('product/:productId')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Analyze Shopify product with AI' })
+  @ApiOkResponse({
+    description: 'Shopify product details with AI analysis',
+    type: ProductReviewResponse,
+  })
+  @ApiBadRequestResponse({
+    description: 'productId is required',
+  })
+  @ApiExtraModels(ShopNotFoundDto, UserNotFoundDto)
+  @ApiNotFoundResponse({
+    description: 'Shop or user not found (see `code`)',
+    schema: { oneOf: refs(ShopNotFoundDto, UserNotFoundDto) },
+  })
+  @ApiParam({
+    name: 'productId',
+    required: true,
+    type: String,
+    description: 'Shopify product ID (GID)',
+    example: 'gid://shopify/Product/123456789',
+  })
+  async getProduct(
+    @Req() req: Request,
+    @Param('productId') productId: string,
+  ): Promise<ProductReviewResponse> {
+    const SHOPIFY_PRODUCT_ID_REGEX = /^gid:\/\/shopify\/Product\/\d+$/;
+
+    if (typeof productId !== 'string' || !productId?.trim()) {
+      throw new BadRequestException('productId is required');
+    }
+    if (!SHOPIFY_PRODUCT_ID_REGEX.test(productId)) {
+      throw new BadRequestException('Invalid Shopify product ID');
+    }
+
+    return this.analyzeProduct.execute(
+      req.user.emailAddresses[0].emailAddress,
+      productId,
     );
   }
 

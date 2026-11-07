@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
@@ -43,6 +44,7 @@ export function SettingsPage() {
       {/* Notifications */}
       <Card>
         <CardHeader>
+          <Badge className="mb-4">IN DEVELOPMENT</Badge>
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
               <Bell className="size-5" />

@@ -1,5 +1,10 @@
 type ProductStatus = 'ACTIVE' | 'ARCHIVED' | 'DRAFT' | 'UNLISTED';
-type Money = { amount: string; currencyCode: string };
+
+type Money = {
+  amount: string;
+  currencyCode: string;
+};
+
 type ProductImage = {
   url: string;
   altText: string | null;
@@ -7,11 +12,28 @@ type ProductImage = {
   height: number | null;
 };
 
+type ProductVariant = {
+  id: string;
+  title: string;
+  sku: string | null;
+  barcode: string | null;
+  price: string;
+  compareAtPrice: string | null;
+  inventoryQuantity: number;
+  inventoryPolicy: 'DENY' | 'CONTINUE';
+  selectedOptions: {
+    name: string;
+    value: string;
+  }[];
+};
+
 export type ShopifyProductNode = {
   // Identification
   id: string;
   title: string;
   handle: string;
+  description: string;
+  descriptionHtml: string;
   vendor: string;
   productType: string;
   tags: string[];
@@ -25,8 +47,18 @@ export type ShopifyProductNode = {
   // Inventory
   totalInventory: number;
 
+  // SEO
+  seo: {
+    title: string | null;
+    description: string | null;
+  };
+
   // Media
-  featuredMedia: { preview: { image: ProductImage | null } | null } | null;
+  featuredMedia: {
+    preview: {
+      image: ProductImage | null;
+    } | null;
+  } | null;
 
   // Storefront links
   onlineStoreUrl: string | null;
@@ -36,5 +68,10 @@ export type ShopifyProductNode = {
   priceRangeV2: {
     minVariantPrice: Money;
     maxVariantPrice: Money;
+  };
+
+  // Variants
+  variants: {
+    nodes: ProductVariant[];
   };
 };

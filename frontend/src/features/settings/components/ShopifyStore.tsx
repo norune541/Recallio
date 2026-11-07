@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import {
   Card,
   CardHeader,
@@ -7,100 +8,35 @@ import {
   CardDescription,
   CardContent,
 } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Store, ExternalLink, ArrowLeftRight, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+
+import { Store, ExternalLink, AlertCircle } from 'lucide-react';
 
 import { RemoveStoreDialog } from './RemoveStore';
+import { ConnectShopDialog } from './ConnectShopDialog';
+import { LoadingShopSkeleton } from './LoadingShopSkeleton';
 
 import { useIsMobile } from '@/common/hooks/use-mobile';
-import { useShopify } from '../hooks/getShopify';
+import { useShopify } from '../../../common/hooks/getShopify';
 import { useConnectShopify } from '../hooks/connectShopify';
 
-import logo from '../../../public/logo.svg';
-import shopify from '../../../public/shopify.svg';
-
 export function ShopifyStore() {
-  const [connectDialogOpen, setConnectDialogOpen] = useState(false);
-  const [shopDomain, setShopDomain] = useState('');
-  const [formError, setFormError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+
+  const [connectError, setConnectError] = useState<string | null>(null);
+
   const connect = useConnectShopify();
 
   const { data, isPending, isError, error } = useShopify();
-  const isMobile = useIsMobile();
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    setFormError(null);
-
-    const normalizedDomain = shopDomain
-      .trim()
-      .replace(/^https?:\/\//, '')
-      .replace(/\/+$/, '');
-
-    if (!/^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/.test(normalizedDomain)) {
-      setFormError('Enter a valid domain like example.myshopify.com.');
-      return;
-    }
-
-    connect.mutate(normalizedDomain, {
-      onSuccess: ({ url }) => {
-        window.location.href = url;
-      },
-      onError: (error) => {
-        setFormError(error.message);
-      },
-    });
-  };
-
+  // Loading state
   if (isPending) {
-    return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <Skeleton className="size-10 shrink-0 rounded-lg" />
-
-            <div className="min-w-0 flex-1 space-y-2">
-              <Skeleton className="h-5 w-40 max-w-full" />
-              <Skeleton className="h-4 w-48 max-w-full" />
-            </div>
-
-            {!isMobile && (
-              <Skeleton className="h-6 w-20 shrink-0 rounded-full" />
-            )}
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            {['Shop owner', 'Plan', 'Email', 'Currency', 'Store URL'].map(
-              (label) => (
-                <div key={label} className="min-w-0 space-y-2">
-                  <Skeleton className="h-4 w-20 max-w-full" />
-                  <Skeleton className="h-4 w-32 max-w-full" />
-                </div>
-              ),
-            )}
-          </div>
-
-          {/* Setup required */}
-          <Skeleton className="h-16 w-full rounded-lg" />
-
-          {/* Plan badge and mobile Connected badge */}
-          <div className="flex flex-wrap gap-2">
-            <Skeleton className="h-6 w-28 rounded-full" />
-
-            {isMobile && <Skeleton className="h-6 w-24 rounded-full" />}
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <LoadingShopSkeleton />;
   }
 
+  // Connected state
   if (data) {
     return (
       <Card>
@@ -162,8 +98,9 @@ export function ShopifyStore() {
               </p>
             </div>
           )}
+
           {isMobile && (
-            <div className="flex flex-wrap items-center gap-2 justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <Badge>Connected</Badge>
               <RemoveStoreDialog />
             </div>
@@ -173,7 +110,14 @@ export function ShopifyStore() {
     );
   }
 
-  if (isError && 'code' in error && error.code === 'USER_NOT_FOUND') {
+  // User not found
+  if (
+    isError &&
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    error.code === 'USER_NOT_FOUND'
+  ) {
     return (
       <Card>
         <CardHeader>
@@ -201,17 +145,13 @@ export function ShopifyStore() {
             </p>
           </div>
 
-          <Button
-            onClick={() => {
-              navigate('/login');
-            }}
-          >
-            Sign in again
-          </Button>
+          <Button onClick={() => navigate('/login')}>Sign in again</Button>
         </CardContent>
       </Card>
     );
   }
+
+  // Shopify store not connected
   if (
     isError &&
     error &&
@@ -220,126 +160,26 @@ export function ShopifyStore() {
     error.code === 'SHOP_NOT_FOUND'
   ) {
     return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
-              <Store className="size-5" />
-            </div>
+      <ConnectShopDialog
+        isConnecting={connect.isPending}
+        error={connectError}
+        onConnect={(shopDomain) => {
+          setConnectError(null);
 
-            <div>
-              <CardTitle>Shopify shop</CardTitle>
-              <CardDescription>
-                Connect and manage your Shopify store.
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-5">
-          <div className="flex items-center justify-between gap-4">
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Shopify store</p>
-              <p className="text-sm text-muted-foreground">
-                Connect your store to start syncing conversations.
-              </p>
-            </div>
-
-            <Badge variant="secondary">Not connected</Badge>
-          </div>
-
-          <Button
-            variant="outline"
-            onClick={() => {
-              setFormError(null);
-              setConnectDialogOpen(true);
-            }}
-          >
-            Connect store
-          </Button>
-
-          <Dialog open={connectDialogOpen} onOpenChange={setConnectDialogOpen}>
-            <DialogContent className="sm:max-w-md px-8 py-8 min-h-96 flex flex-col justify-between">
-              <div className="flex flex-col items-center text-center space-y-4">
-                <div className="flex items-center justify-center gap-3">
-                  <img
-                    src={logo}
-                    alt="Recallio"
-                    className="size-10 object-contain"
-                  />
-                  <ArrowLeftRight className="size-4 text-muted-foreground" />
-                  <img
-                    src={shopify}
-                    alt="Shopify"
-                    className="size-10 object-contain"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <h2 className="text-xl font-semibold tracking-tight">
-                    Connect Shopify to Recallio
-                  </h2>
-                  <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                    Enter your Shopify store domain to connect it to Recallio.
-                  </p>
-                </div>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <label
-                    htmlFor="shop-domain"
-                    className="text-sm font-medium block mb-2"
-                  >
-                    Store domain
-                  </label>
-                  <Input
-                    id="shop-domain"
-                    placeholder="example.myshopify.com"
-                    value={shopDomain}
-                    onChange={(event) => {
-                      setShopDomain(event.target.value);
-                      if (formError) setFormError(null);
-                    }}
-                    autoComplete="url"
-                    required
-                    className={
-                      formError
-                        ? 'border-destructive focus-visible:ring-destructive'
-                        : ''
-                    }
-                  />
-                  {formError && (
-                    <div className="flex items-center gap-2 text-xs text-destructive animate-in fade-in-50">
-                      <AlertCircle className="size-3.5 shrink-0" />
-                      <span>{formError}</span>
-                    </div>
-                  )}
-                  <p className="text-xs text-muted-foreground block mt-5">
-                    Use your permanent myshopify.com domain.
-                  </p>
-                </div>
-
-                <DialogFooter className="pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setConnectDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={connect.isPending}>
-                    {connect.isPending ? 'Connecting...' : 'Connect store'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </CardContent>
-      </Card>
+          connect.mutate(shopDomain, {
+            onSuccess: ({ url }) => {
+              window.location.href = url;
+            },
+            onError: (error) => {
+              setConnectError(error.message);
+            },
+          });
+        }}
+      />
     );
   }
 
+  // Unexpected error
   if (isError) {
     return (
       <Card>

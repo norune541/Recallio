@@ -1,10 +1,7 @@
 import {
   AlertTriangle,
   ArrowRight,
-  ArrowUpRight,
-  CheckCircle2,
   ChevronRight,
-  Clock3,
   Lightbulb,
   MessageSquareText,
   MoreHorizontal,
@@ -12,48 +9,22 @@ import {
   ShieldCheck,
   Sparkles,
   TrendingUp,
-  Zap,
+  Search,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
-import { ProductIntelligence } from '../components/CatalogComponent';
+import { useShopify } from '@/common/hooks/getShopify';
+import { useProducts } from '../hooks/getProducts';
 
-const stats = [
-  {
-    label: 'Products synced',
-    value: '1,284',
-    change: '+12 this week',
-    trend: 'up',
-    icon: Package,
-    description: 'Across your catalog',
-  },
-  {
-    label: 'Conversations analyzed',
-    value: '842',
-    change: '+18.6%',
-    trend: 'up',
-    icon: MessageSquareText,
-    description: 'AI-analyzed in 30 days',
-  },
-  {
-    label: 'AI-assisted resolution',
-    value: '68%',
-    change: '+5.2%',
-    trend: 'up',
-    icon: Sparkles,
-    description: 'Of analyzed conversations',
-  },
-  {
-    label: 'Insights to review',
-    value: '14',
-    change: '3 high priority',
-    trend: 'attention',
-    icon: AlertTriangle,
-    description: 'Across products and support',
-  },
-];
+import { ProductIntelligence } from '../components/CatalogComponent';
+import { ShopNotConnectedMainComponent } from '@/components/ShopNotConnectedMainComponent';
+import { OverviewSkeleton } from '../components/OverviewSkeleton';
+import { OverviewKpiCards } from '../components/OverviewKpiCards';
+import { OverviewIntelligenceBriefing } from '../components/OverviewBriefingComponent';
+
+import { truncateText } from '@/common/utils/truncateText';
 
 const activityItems = [
   {
@@ -90,11 +61,39 @@ const weeklyActivity = [
   { day: 'Sun', value: 69 },
 ];
 
-// ============================================================
-// Main component
-// ============================================================
-
 export function OverviewPage() {
+  const {
+    isPending: isShopifyPending,
+    isError: isShopifyError,
+    error: shopifyError,
+  } = useShopify();
+
+  const {
+    data,
+    isPending: isProductsPending,
+    isError: isProductsError,
+    error: productsError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useProducts();
+
+  if (isProductsPending || isShopifyPending) {
+    return <OverviewSkeleton />;
+  }
+
+  if (
+    isShopifyError &&
+    shopifyError &&
+    typeof shopifyError === 'object' &&
+    'code' in shopifyError &&
+    shopifyError.code === 'SHOP_NOT_FOUND'
+  ) {
+    return <ShopNotConnectedMainComponent />;
+  }
+
+  const aiReview = data?.pages[0]?.aiReview;
+
   return (
     <div className="space-y-8 pb-8">
       {/* ======================================================
@@ -121,188 +120,11 @@ export function OverviewPage() {
       {/* ======================================================
           KPI CARDS
       ====================================================== */}
-      <section>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-semibold">At a glance</h2>
-
-          <span className="text-xs text-muted-foreground">
-            Illustrative sample metrics
-          </span>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {stats.map((stat) => {
-            const Icon = stat.icon;
-
-            return (
-              <Card
-                key={stat.label}
-                className="transition-shadow hover:shadow-md"
-              >
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">
-                        {stat.label}
-                      </p>
-
-                      <p className="text-3xl font-semibold tracking-tight">
-                        {stat.value}
-                      </p>
-                    </div>
-
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted">
-                      <Icon className="size-5 text-foreground" />
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
-                    {stat.trend === 'attention' ? (
-                      <Badge variant="secondary" className="gap-1 font-normal">
-                        <AlertTriangle className="size-3" />
-                        {stat.change}
-                      </Badge>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
-                        <ArrowUpRight className="size-3.5" />
-                        {stat.change}
-                      </span>
-                    )}
-
-                    <span className="text-xs text-muted-foreground">
-                      {stat.description}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </section>
+      <OverviewKpiCards />
       {/* ======================================================
           AI INSIGHTS
       ====================================================== */}
-      <section>
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="size-5" />
-            <h2 className="text-base font-semibold">Intelligence briefing</h2>
-          </div>
-
-          <Badge variant="secondary" className="gap-1.5 font-normal">
-            <Zap className="size-3.5" />
-            AI generated
-          </Badge>
-        </div>
-
-        <Card className="overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-violet-500 via-indigo-500 to-sky-500" />
-
-          <CardContent className="p-5 sm:p-6">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-violet-700">
-                <Sparkles className="size-6" />
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
-                  <div>
-                    <h3 className="text-lg font-semibold tracking-tight">
-                      Here's what deserves your attention
-                    </h3>
-
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      A sample summary of signals across your store.
-                    </p>
-                  </div>
-
-                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Clock3 className="size-3.5" />
-                    Sample briefing
-                  </span>
-                </div>
-
-                <div className="mt-5 grid gap-4 md:grid-cols-3">
-                  <div className="rounded-xl border p-4">
-                    <div className="mb-3 flex items-center gap-2 text-amber-600">
-                      <AlertTriangle className="size-4" />
-                      <span className="text-xs font-medium uppercase tracking-wide">
-                        Needs attention
-                      </span>
-                    </div>
-
-                    <p className="text-sm font-semibold">
-                      Low stock on Ceramic Mug
-                    </p>
-
-                    <p className="mt-1.5 text-sm leading-5 text-muted-foreground">
-                      Inventory is down to 8 units. Review restocking before
-                      demand exceeds available supply.
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border p-4">
-                    <div className="mb-3 flex items-center gap-2 text-violet-600">
-                      <Lightbulb className="size-4" />
-                      <span className="text-xs font-medium uppercase tracking-wide">
-                        Opportunity
-                      </span>
-                    </div>
-
-                    <p className="text-sm font-semibold">
-                      Explore product bundles
-                    </p>
-
-                    <p className="mt-1.5 text-sm leading-5 text-muted-foreground">
-                      Customers frequently ask about discounts on multiple
-                      items. A bundle offer may address that demand.
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border p-4">
-                    <div className="mb-3 flex items-center gap-2 text-emerald-600">
-                      <CheckCircle2 className="size-4" />
-                      <span className="text-xs font-medium uppercase tracking-wide">
-                        Customer signal
-                      </span>
-                    </div>
-
-                    <p className="text-sm font-semibold">
-                      Material quality is a strength
-                    </p>
-
-                    <p className="mt-1.5 text-sm leading-5 text-muted-foreground">
-                      Positive feedback about the Linen Tote's material could
-                      help inform product messaging.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-5 flex flex-col justify-between gap-3 border-t pt-4 sm:flex-row sm:items-center">
-                  <p className="text-xs leading-5 text-muted-foreground">
-                    Sample insights for demonstration. Live insights should be
-                    grounded in actual store and conversation data.
-                  </p>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-fit gap-2"
-                    onClick={() =>
-                      console.log('[Recallio] Open AI insights:', {
-                        source: 'overview',
-                      })
-                    }
-                  >
-                    Explore insights
-                    <ArrowRight className="size-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
+      <OverviewIntelligenceBriefing aiReview={aiReview} />
       {/* ======================================================
           ANALYTICS + ATTENTION
       ====================================================== */}
@@ -312,8 +134,8 @@ export function OverviewPage() {
         <Card className="xl:col-span-3">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
+              <Badge className="mb-4">IN DEVELOPMENT</Badge>
               <CardTitle className="text-base">Customer activity</CardTitle>
-
               <p className="mt-1 text-sm text-muted-foreground">
                 Conversations processed by AI
               </p>
@@ -387,10 +209,13 @@ export function OverviewPage() {
 
         <Card className="xl:col-span-2">
           <CardHeader className="pb-3">
+            <Badge className="mb-4">IN DEVELOPMENT</Badge>
             <div className="flex items-center justify-between gap-3">
               <CardTitle className="text-base">Priority actions</CardTitle>
 
-              <Badge variant="secondary">3 items</Badge>
+              <Badge variant="secondary">
+                {aiReview?.insights.length ?? 0} items
+              </Badge>
             </div>
 
             <p className="text-sm text-muted-foreground">
@@ -399,85 +224,83 @@ export function OverviewPage() {
           </CardHeader>
 
           <CardContent className="space-y-1">
-            <button
-              type="button"
-              className="group flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors hover:bg-muted/60"
-              onClick={() =>
-                console.log('[Recallio] Review low inventory', {
-                  productId: '1',
-                  product: 'Everyday Ceramic Mug',
-                })
-              }
-            >
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
-                <Package className="size-4" />
-              </div>
+            {aiReview?.insights.length ? (
+              aiReview.insights.slice(0, 3).map((insight, index) => {
+                const categoryConfig = {
+                  content: {
+                    icon: MessageSquareText,
+                    className: 'bg-sky-100 text-sky-700',
+                  },
+                  seo: {
+                    icon: Search,
+                    className: 'bg-violet-100 text-violet-700',
+                  },
+                  inventory: {
+                    icon: Package,
+                    className: 'bg-amber-100 text-amber-700',
+                  },
+                  pricing: {
+                    icon: Lightbulb,
+                    className: 'bg-emerald-100 text-emerald-700',
+                  },
+                  product: {
+                    icon: Lightbulb,
+                    className: 'bg-violet-100 text-violet-700',
+                  },
+                };
 
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium">Review low inventory</p>
-                  <span className="size-1.5 shrink-0 rounded-full bg-amber-500" />
-                </div>
+                const priorityConfig = {
+                  high: 'bg-amber-500',
+                  medium: 'bg-violet-500',
+                  low: 'bg-emerald-500',
+                };
 
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  Everyday Ceramic Mug · 8 units remaining
+                const config = categoryConfig[insight.category];
+                const Icon = config.icon;
+
+                return (
+                  <button
+                    key={`${insight.category}-${index}`}
+                    type="button"
+                    className="group flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors hover:bg-muted/60"
+                    onClick={() =>
+                      console.log('[Recallio] Review insight', insight)
+                    }
+                  >
+                    <div
+                      className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${config.className}`}
+                    >
+                      <Icon className="size-4" />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">
+                          {truncateText(insight.title, 65)}
+                        </p>
+
+                        <span
+                          className={`size-1.5 shrink-0 rounded-full ${priorityConfig[insight.priority]}`}
+                        />
+                      </div>
+
+                      <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                        {truncateText(insight.description, 120)}
+                      </p>
+                    </div>
+
+                    <ChevronRight className="mt-1 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  </button>
+                );
+              })
+            ) : (
+              <div className="py-8 text-center">
+                <p className="text-sm font-medium">No priority actions yet</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  AI insights will appear here after product analysis.
                 </p>
               </div>
-
-              <ChevronRight className="mt-1 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-            </button>
-
-            <button
-              type="button"
-              className="group flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors hover:bg-muted/60"
-              onClick={() =>
-                console.log('[Recallio] Review recurring questions', {
-                  topic: 'shipping',
-                })
-              }
-            >
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
-                <MessageSquareText className="size-4" />
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">
-                  Review recurring questions
-                </p>
-
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  Customers have repeated shipping questions.
-                </p>
-              </div>
-
-              <ChevronRight className="mt-1 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-            </button>
-
-            <button
-              type="button"
-              className="group flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors hover:bg-muted/60"
-              onClick={() =>
-                console.log('[Recallio] Review bundle opportunity', {
-                  productId: '2',
-                })
-              }
-            >
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-700">
-                <Lightbulb className="size-4" />
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">
-                  Explore bundle opportunities
-                </p>
-
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  Interest in multi-item discounts.
-                </p>
-              </div>
-
-              <ChevronRight className="mt-1 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-            </button>
+            )}
 
             <Button
               variant="outline"
@@ -485,6 +308,7 @@ export function OverviewPage() {
               onClick={() =>
                 console.log('[Recallio] View all priority actions')
               }
+              disabled={!aiReview?.insights.length}
             >
               View all insights
               <ArrowRight className="size-4" />
@@ -492,12 +316,11 @@ export function OverviewPage() {
           </CardContent>
         </Card>
       </section>
-
       <ProductIntelligence />
-
       <section className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
+            <Badge>IN DEVELOPMENT</Badge>
             <div className="flex items-center justify-between gap-3">
               <CardTitle className="text-base">Recent activity</CardTitle>
 
@@ -549,9 +372,9 @@ export function OverviewPage() {
         </Card>
 
         {/* AI coverage */}
-
         <Card>
           <CardHeader>
+            <Badge>IN DEVELOPMENT</Badge>
             <div className="flex items-center gap-2">
               <div className="flex size-9 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
                 <BrainCircuitIcon />

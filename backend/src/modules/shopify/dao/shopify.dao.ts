@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service.js';
+import { Prisma } from 'backend/src/generated/prisma/client.js';
+import type { ProductAIReview } from '../../claude/dto/product-review.js';
+import type { ShopifyProductNode } from 'backend/src/common/types/products.js';
 
 @Injectable()
 export class ShopifyDao {
@@ -178,7 +181,7 @@ export class ShopifyDao {
   }
 
   async findShopByUserId(userId: string) {
-    const membership = await this.prisma.shopMember.findUnique({
+    const membership = await this.prisma.shopMember.findFirst({
       where: {
         userId,
         shop: {
@@ -236,5 +239,188 @@ export class ShopifyDao {
     });
 
     return member?.role ?? null;
+  }
+  async findConnectedShops() {
+    return await this.prisma.shopifyShop.findMany({
+      where: {
+        status: 'CONNECTED',
+      },
+      select: {
+        id: true,
+        shopDomain: true,
+      },
+    });
+  }
+  async findProductsByShopId(shopId: string) {
+    return await this.prisma.product.findMany({
+      where: { shopId },
+      select: {
+        id: true,
+        shopifyProductId: true,
+        updatedAt: true,
+        syncedAt: true,
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
+  }
+
+  async findProductsUpdatedAt(shopId: string, shopifyProductIds: string[]) {
+    return await this.prisma.product.findMany({
+      where: {
+        shopId,
+        shopifyProductId: {
+          in: shopifyProductIds,
+        },
+      },
+      select: {
+        shopifyProductId: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async upsertProductWithReview(
+    shopId: string,
+    product: ShopifyProductNode,
+    review: ProductAIReview,
+  ): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      const savedProduct = await tx.product.upsert({
+        where: {
+          shopId_shopifyProductId: {
+            shopId,
+            shopifyProductId: product.id,
+          },
+        },
+        create: {
+          shopId,
+          shopifyProductId: product.id,
+          title: product.title,
+          handle: product.handle,
+          description: product.description,
+          descriptionHtml: product.descriptionHtml,
+          vendor: product.vendor,
+          productType: product.productType,
+          tags: product.tags,
+          status: product.status,
+          createdAt: new Date(product.createdAt),
+          updatedAt: new Date(product.updatedAt),
+          publishedAt: product.publishedAt
+            ? new Date(product.publishedAt)
+            : null,
+          totalInventory: product.totalInventory,
+          seoTitle: product.seo.title,
+          seoDescription: product.seo.description,
+          featuredImageUrl: product.featuredMedia?.preview?.image?.url ?? null,
+          featuredImageAltText:
+            product.featuredMedia?.preview?.image?.altText ?? null,
+          featuredImageWidth:
+            product.featuredMedia?.preview?.image?.width ?? null,
+          featuredImageHeight:
+            product.featuredMedia?.preview?.image?.height ?? null,
+          onlineStoreUrl: product.onlineStoreUrl,
+          onlineStorePreviewUrl: product.onlineStorePreviewUrl,
+          minVariantPrice: new Prisma.Decimal(
+            product.priceRangeV2.minVariantPrice.amount,
+          ),
+          minVariantCurrency: product.priceRangeV2.minVariantPrice.currencyCode,
+          maxVariantPrice: new Prisma.Decimal(
+            product.priceRangeV2.maxVariantPrice.amount,
+          ),
+          maxVariantCurrency: product.priceRangeV2.maxVariantPrice.currencyCode,
+        },
+        update: {
+          title: product.title,
+          handle: product.handle,
+          description: product.description,
+          descriptionHtml: product.descriptionHtml,
+          vendor: product.vendor,
+          productType: product.productType,
+          tags: product.tags,
+          status: product.status,
+          createdAt: new Date(product.createdAt),
+          updatedAt: new Date(product.updatedAt),
+          publishedAt: product.publishedAt
+            ? new Date(product.publishedAt)
+            : null,
+          totalInventory: product.totalInventory,
+          seoTitle: product.seo.title,
+          seoDescription: product.seo.description,
+          featuredImageUrl: product.featuredMedia?.preview?.image?.url ?? null,
+          featuredImageAltText:
+            product.featuredMedia?.preview?.image?.altText ?? null,
+          featuredImageWidth:
+            product.featuredMedia?.preview?.image?.width ?? null,
+          featuredImageHeight:
+            product.featuredMedia?.preview?.image?.height ?? null,
+          onlineStoreUrl: product.onlineStoreUrl,
+          onlineStorePreviewUrl: product.onlineStorePreviewUrl,
+          minVariantPrice: new Prisma.Decimal(
+            product.priceRangeV2.minVariantPrice.amount,
+          ),
+          minVariantCurrency: product.priceRangeV2.minVariantPrice.currencyCode,
+          maxVariantPrice: new Prisma.Decimal(
+            product.priceRangeV2.maxVariantPrice.amount,
+          ),
+          maxVariantCurrency: product.priceRangeV2.maxVariantPrice.currencyCode,
+          syncedAt: new Date(),
+        },
+        select: { id: true },
+      });
+
+      for (const variant of product.variants.nodes) {
+        await tx.productVariant.upsert({
+          where: {
+            productId_shopifyVariantId: {
+              productId: savedProduct.id,
+              shopifyVariantId: variant.id,
+            },
+          },
+          create: {
+            productId: savedProduct.id,
+            shopifyVariantId: variant.id,
+            title: variant.title,
+            sku: variant.sku,
+            barcode: variant.barcode,
+            price: new Prisma.Decimal(variant.price),
+            compareAtPrice: variant.compareAtPrice
+              ? new Prisma.Decimal(variant.compareAtPrice)
+              : null,
+            inventoryQuantity: variant.inventoryQuantity,
+            inventoryPolicy: variant.inventoryPolicy,
+            selectedOptions: variant.selectedOptions,
+          },
+          update: {
+            title: variant.title,
+            sku: variant.sku,
+            barcode: variant.barcode,
+            price: new Prisma.Decimal(variant.price),
+            compareAtPrice: variant.compareAtPrice
+              ? new Prisma.Decimal(variant.compareAtPrice)
+              : null,
+            inventoryQuantity: variant.inventoryQuantity,
+            inventoryPolicy: variant.inventoryPolicy,
+            selectedOptions: variant.selectedOptions,
+          },
+        });
+      }
+
+      await tx.productReview.upsert({
+        where: { productId: savedProduct.id },
+        create: {
+          productId: savedProduct.id,
+          seoTitle: review.seo.title,
+          seoMetaDescription: review.seo.metaDescription,
+          insights: review.insights,
+        },
+        update: {
+          seoTitle: review.seo.title,
+          seoMetaDescription: review.seo.metaDescription,
+          insights: review.insights,
+        },
+      });
+    });
   }
 }

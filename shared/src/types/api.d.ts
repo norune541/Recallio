@@ -71,6 +71,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/integrations/shopify/product/{productId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Analyze Shopify product with AI */
+        get: operations["ShopifyController_getProduct"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/integrations/shopify/shop": {
         parameters: {
             query?: never;
@@ -192,6 +209,22 @@ export interface components {
              * @example Not Found
              */
             error: string;
+        };
+        ProductReviewAISeoDto: {
+            title: string | null;
+            metaDescription: string | null;
+        };
+        ProductReviewAIInsightDto: {
+            title: string;
+            description: string;
+            /** @enum {string} */
+            category: "content" | "inventory" | "seo" | "pricing" | "product";
+            /** @enum {string} */
+            priority: "low" | "medium" | "high";
+        };
+        ProductReviewAIReviewDto: {
+            seo: components["schemas"]["ProductReviewAISeoDto"];
+            insights: components["schemas"]["ProductReviewAIInsightDto"][];
         };
         ShopifyImageDto: {
             /**
@@ -329,6 +362,7 @@ export interface components {
             endCursor: string | null;
         };
         ShopifyProductsResponseDto: {
+            aiReview: components["schemas"]["ProductReviewAIReviewDto"];
             /** @description List of Shopify products */
             items: components["schemas"]["ShopifyProductDto"][];
             /** @description Pagination information */
@@ -350,6 +384,88 @@ export interface components {
              * @example Bad Gateway
              */
             error: string;
+        };
+        ProductReviewShopDomainDto: {
+            url: string;
+        };
+        ProductReviewShopDto: {
+            primaryDomain: components["schemas"]["ProductReviewShopDomainDto"] | null;
+        };
+        ProductReviewSeoDto: {
+            title: string | null;
+            description: string | null;
+        };
+        ProductReviewImageDto: {
+            url: string;
+            altText: string | null;
+            width: number | null;
+            height: number | null;
+        };
+        ProductReviewMediaPreviewDto: {
+            image: components["schemas"]["ProductReviewImageDto"] | null;
+        };
+        ProductReviewFeaturedMediaDto: {
+            preview: components["schemas"]["ProductReviewMediaPreviewDto"] | null;
+        };
+        ProductReviewMoneyDto: {
+            /** @example 19.99 */
+            amount: string;
+            /** @example USD */
+            currencyCode: string;
+        };
+        ProductReviewPriceRangeDto: {
+            minVariantPrice: components["schemas"]["ProductReviewMoneyDto"];
+            maxVariantPrice: components["schemas"]["ProductReviewMoneyDto"];
+        };
+        ProductReviewSelectedOptionDto: {
+            name: string;
+            value: string;
+        };
+        ProductReviewVariantDto: {
+            id: string;
+            title: string;
+            sku: string | null;
+            barcode: string | null;
+            /** @example 19.99 */
+            price: string;
+            compareAtPrice: string | null;
+            inventoryQuantity: number;
+            /**
+             * @example DENY
+             * @enum {string}
+             */
+            inventoryPolicy: "DENY" | "CONTINUE";
+            selectedOptions: components["schemas"]["ProductReviewSelectedOptionDto"][];
+        };
+        ProductReviewVariantsDto: {
+            nodes: components["schemas"]["ProductReviewVariantDto"][];
+        };
+        ProductReviewProductDto: {
+            id: string;
+            title: string;
+            handle: string;
+            description: string;
+            descriptionHtml: string;
+            vendor: string;
+            productType: string;
+            tags: string[];
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED" | "DRAFT" | "UNLISTED";
+            createdAt: string;
+            updatedAt: string;
+            publishedAt: string | null;
+            totalInventory: number;
+            seo: components["schemas"]["ProductReviewSeoDto"];
+            featuredMedia: components["schemas"]["ProductReviewFeaturedMediaDto"] | null;
+            onlineStoreUrl: string | null;
+            onlineStorePreviewUrl: string | null;
+            priceRangeV2: components["schemas"]["ProductReviewPriceRangeDto"];
+            variants: components["schemas"]["ProductReviewVariantsDto"];
+        };
+        ProductReviewResponse: {
+            shop: components["schemas"]["ProductReviewShopDto"];
+            product: components["schemas"]["ProductReviewProductDto"];
+            aiReview: components["schemas"]["ProductReviewAIReviewDto"];
         };
         ShopifyShopPrimaryDomainDto: {
             /**
@@ -705,6 +821,45 @@ export interface operations {
             };
         };
     };
+    ShopifyController_getProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Shopify product ID (GID) */
+                productId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Shopify product details with AI analysis */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductReviewResponse"];
+                };
+            };
+            /** @description productId is required */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Shop or user not found (see `code`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShopNotFoundDto"] | components["schemas"]["UserNotFoundDto"];
+                };
+            };
+        };
+    };
     ShopifyController_getShop: {
         parameters: {
             query?: never;
@@ -768,6 +923,13 @@ export interface operations {
             };
             /** @description The shop owner cannot leave while other members remain. Ownership must be transferred first. */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Only the shop owner can delete the shop. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

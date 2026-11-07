@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
   Sparkles,
@@ -228,7 +229,6 @@ export function CatalogComponent() {
     <Card>
       <CardContent className="p-0">
         {/* Product table toolbar */}
-
         <div className="flex flex-col justify-between gap-3 border-b p-4 sm:flex-row sm:items-center">
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="relative w-full sm:max-w-xs">
@@ -285,8 +285,9 @@ export function CatalogComponent() {
             const avatarColor = avatarColors[index % avatarColors.length];
 
             return (
-              <div
+              <Link
                 key={product.id}
+                to={`/products/${encodeURIComponent(product.id)}`}
                 className="grid gap-4 p-4 transition-colors hover:bg-muted/30 md:grid-cols-[minmax(0,1.5fr)_100px_100px_minmax(0,1.5fr)_32px] md:items-center"
               >
                 {/* Product */}
@@ -381,7 +382,7 @@ export function CatalogComponent() {
                     <ChevronRight className="size-4" />
                   </Button>
                 </div>
-              </div>
+              </Link>
             );
           })}
 

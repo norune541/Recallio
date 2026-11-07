@@ -9,16 +9,12 @@ import {
   PanelLeftOpen,
 } from 'lucide-react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { toast } from 'sonner';
 
 import { Toaster } from '@/components/ui/sonner';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarHeader,
@@ -37,7 +33,7 @@ const navigation = [
     label: 'Overview',
     icon: LayoutDashboard,
     path: '/',
-    activePaths: ['/details'],
+    activePaths: ['/products'],
   },
   { label: 'Conversations', icon: MessageSquareText, path: '/conversations' },
   { label: 'AI Summaries', icon: Sparkles, path: '/summaries' },
@@ -83,12 +79,6 @@ function AppLayoutContent() {
     setOpenMobile(false);
   }, [pathname, setOpenMobile]);
 
-  const handleConnectStore = () => {
-    toast.info('Coming soon', {
-      description: 'Shopify integration is not available yet.',
-    });
-  };
-
   return (
     <>
       <Sidebar collapsible="offcanvas">
@@ -133,31 +123,6 @@ function AppLayoutContent() {
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
-
-        <SidebarFooter>
-          <Card>
-            <CardContent className="p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <Store className="size-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Shopify store</span>
-              </div>
-
-              <Badge variant="secondary">Demo data</Badge>
-
-              <p className="mt-2 text-xs text-muted-foreground">
-                Connect your store to get started.
-              </p>
-
-              <Button
-                size="sm"
-                className="mt-3 w-full"
-                onClick={handleConnectStore}
-              >
-                Connect store
-              </Button>
-            </CardContent>
-          </Card>
-        </SidebarFooter>
       </Sidebar>
 
       <SidebarInset className="min-w-0">
