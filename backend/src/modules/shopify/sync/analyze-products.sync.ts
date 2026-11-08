@@ -8,21 +8,35 @@ import { createShopifyGraphqlClient } from '../shopify-api.client.js';
 import { GetValidShopifyAccessTokenUseCase } from '../use-cases/auth/get-valid-shopify-access-token.use-case.js';
 
 import type { ShopifyProductNode } from 'backend/src/common/types/products.js';
-import type { ShopifyProductsResponseDto } from '../dto/shopify-products.dto.js';
 
+export type AnalyzeProductsResult = {
+  items: ShopifyProductNode[];
+  pageInfo: {
+    hasNextPage: boolean;
+    endCursor: string | null;
+  };
+};
 type ShopifyProductListData = {
   products: {
     nodes: ShopifyProductNode[];
-    pageInfo: { hasNextPage: boolean; endCursor: string | null };
+    pageInfo: {
+      hasNextPage: boolean;
+      endCursor: string | null;
+    };
   };
 };
 
 const PRODUCTS_QUERY = `#graphql
-  query Products($first: Int!, $after: String) {
+  query Products(
+    $first: Int!
+    $after: String
+    $searchQuery: String
+  ) {
     products(
-      first: $first,
-      after: $after,
-      sortKey: TITLE,
+      first: $first
+      after: $after
+      query: $searchQuery
+      sortKey: UPDATED_AT
       reverse: false
     ) {
       nodes {
@@ -105,7 +119,8 @@ export class AnalyzeProductsUseCase {
     shopDomain: string,
     limit: number,
     after?: string,
-  ): Promise<ShopifyProductsResponseDto> {
+    updatedAfter?: Date,
+  ): Promise<AnalyzeProductsResult> {
     const accessToken = await this.getValidToken.execute(shopDomain);
 
     try {
@@ -115,9 +130,19 @@ export class AnalyzeProductsUseCase {
         'read_products',
       );
 
+      const searchQuery = updatedAfter
+        ? `updated_at:>${updatedAfter.toISOString()}`
+        : undefined;
+
       const { data, errors } = await client.request<ShopifyProductListData>(
         PRODUCTS_QUERY,
-        { variables: { first: limit, after } },
+        {
+          variables: {
+            first: limit,
+            after,
+            searchQuery,
+          },
+        },
       );
 
       if (errors) {
@@ -125,25 +150,37 @@ export class AnalyzeProductsUseCase {
           errors.message ?? 'Shopify GraphQL request failed',
         );
       }
+
       if (!data) {
         throw new BadGatewayException('Failed to retrieve Shopify products');
       }
 
       return {
-        items: data?.products.nodes ?? [],
-        pageInfo: data?.products.pageInfo ?? {
-          hasNextPage: false,
-          endCursor: null,
-        },
+        items: data.products.nodes,
+        pageInfo: data.products.pageInfo,
       };
     } catch (err) {
       if (err instanceof GraphqlQueryError) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const graphQLErrors = err.body?.errors.graphQLErrors;
+        const body = err.body as
+          | {
+              errors?: {
+                graphQLErrors?: Array<{ message?: string }>;
+              };
+            }
+          | undefined;
+        const graphQLErrors = body?.errors?.graphQLErrors;
+        const message = graphQLErrors?.[0]?.message;
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const message = graphQLErrors[0]?.message;
-        throw new BadRequestException(message);
+        throw new BadRequestException(
+          message ?? 'Shopify GraphQL query failed',
+        );
+      }
+
+      if (
+        err instanceof BadGatewayException ||
+        err instanceof BadRequestException
+      ) {
+        throw err;
       }
 
       throw new BadGatewayException('Failed to retrieve Shopify products');

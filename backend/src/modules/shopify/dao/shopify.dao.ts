@@ -423,4 +423,19 @@ export class ShopifyDao {
       });
     });
   }
+  async getLastSyncedAt(shopId: string): Promise<Date | null> {
+    const shop = await this.prisma.shopifyShop.findUnique({
+      where: { id: shopId },
+      select: { lastSyncedAt: true },
+    });
+
+    return shop?.lastSyncedAt ?? null;
+  }
+
+  async updateLastSyncedAt(shopId: string, lastSyncedAt: Date): Promise<void> {
+    await this.prisma.shopifyShop.update({
+      where: { id: shopId },
+      data: { lastSyncedAt },
+    });
+  }
 }

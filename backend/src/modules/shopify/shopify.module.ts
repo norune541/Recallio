@@ -9,7 +9,6 @@ import { CompleteShopifyAuthUseCase } from './use-cases/auth/complete-shopify-au
 import { GetValidShopifyAccessTokenUseCase } from './use-cases/auth/get-valid-shopify-access-token.use-case.js';
 import { RefreshShopifyAccessTokenUseCase } from './use-cases/auth/refresh-shopify-access-token.use-case.js';
 import { AnalyzeProductsUseCase } from './sync/analyze-products.sync.js';
-import { AnalyzeProductUseCase } from './sync/analyze-product.sync.js';
 import { ShopifySyncProvider } from './providers/shopify-sync.provider.js';
 import { GetShopUseCase } from './use-cases/shop/get-shop.js';
 import { DeleteShop } from './use-cases/shop/delete-shop.use-case.js';
@@ -30,7 +29,6 @@ import { ClaudeModule } from '../claude/claude.module.js';
     AnalyzeProductsUseCase,
     GetShopUseCase,
     DeleteShop,
-    AnalyzeProductUseCase,
   ],
 })
 export class ShopifyModule {}
