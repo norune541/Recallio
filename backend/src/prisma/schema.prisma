@@ -48,6 +48,13 @@ enum InventoryPolicy {
   CONTINUE
 }
 
+enum ShopifySyncStatus {
+  IDLE
+  PENDING
+  CONNECTED
+  FAILED
+}
+
 model User {
   id          String  @id @default(uuid()) @db.Uuid
   firstName   String?
@@ -159,9 +166,10 @@ model ShopifyShop {
   accessTokenExpiresAt  DateTime? @db.Timestamptz(3)
   refreshTokenExpiresAt DateTime? @db.Timestamptz(3)
 
-  connectedAt   DateTime? @db.Timestamptz(3)
-  uninstalledAt DateTime? @db.Timestamptz(3)
-  lastSyncedAt  DateTime? @db.Timestamptz(3)
+  connectedAt   DateTime?         @db.Timestamptz(3)
+  uninstalledAt DateTime?         @db.Timestamptz(3)
+  lastSyncedAt  DateTime?         @db.Timestamptz(3)
+  syncStatus    ShopifySyncStatus @default(IDLE)
 
   members  ShopMember[]
   products Product[]
