@@ -146,10 +146,15 @@ export class ShopifyController {
     summary: 'Start Shopify product synchronization or get current sync status',
   })
   @ApiOkResponse({
-    description: 'Current Shopify synchronization status',
     schema: {
-      type: 'string',
-      enum: ['IDLE', 'PENDING', 'CONNECTED', 'FAILED'],
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['IDLE', 'PENDING', 'CONNECTED', 'FAILED'],
+        },
+      },
+      required: ['status'],
     },
   })
   @ApiExtraModels(ShopNotFoundDto, UserNotFoundDto)
@@ -158,9 +163,10 @@ export class ShopifyController {
     schema: { oneOf: refs(ShopNotFoundDto, UserNotFoundDto) },
   })
   async syncShopProducts(@Req() req: Request) {
-    return await this.syncShopProductsUseCase.execute(
+    const status = await this.syncShopProductsUseCase.execute(
       req.user.emailAddresses[0].emailAddress,
     );
+    return { status };
   }
 
   @Get('products')

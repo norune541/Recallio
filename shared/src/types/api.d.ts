@@ -691,13 +691,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Current Shopify synchronization status */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": "IDLE" | "PENDING" | "CONNECTED" | "FAILED";
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "IDLE" | "PENDING" | "CONNECTED" | "FAILED";
+                    };
                 };
             };
             /** @description Shop or user not found (see `code`) */
