@@ -3,6 +3,7 @@ import { PrismaService } from '../../../prisma/prisma.service.js';
 import { Prisma } from 'backend/src/generated/prisma/client.js';
 import type { ProductAIReview } from '../../claude/dto/product-review.js';
 import type { ShopifyProductNode } from 'backend/src/common/types/products.js';
+import { ShopifySyncStatus } from 'backend/src/generated/prisma/client.js';
 
 @Injectable()
 export class ShopifyDao {
@@ -436,6 +437,36 @@ export class ShopifyDao {
     await this.prisma.shopifyShop.update({
       where: { id: shopId },
       data: { lastSyncedAt },
+    });
+  }
+
+  async updateShopifySyncStatus(shopId: string, status: ShopifySyncStatus) {
+    await this.prisma.shopifyShop.update({
+      where: { id: shopId },
+      data: { syncStatus: status },
+    });
+  }
+
+  async getShopifySyncStatus(shopId: string) {
+    const shop = await this.prisma.shopifyShop.findUnique({
+      where: { id: shopId },
+      select: { syncStatus: true },
+    });
+
+    return shop?.syncStatus ?? null;
+  }
+
+  async tryStartShopifySync(shopId: string) {
+    return this.prisma.shopifyShop.updateMany({
+      where: {
+        id: shopId,
+        syncStatus: {
+          not: 'PENDING',
+        },
+      },
+      data: {
+        syncStatus: 'PENDING',
+      },
     });
   }
 }

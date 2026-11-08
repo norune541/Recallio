@@ -52,7 +52,7 @@ export class ShopifySyncProvider {
     }
   }
 
-  private async syncShop(shop: {
+  public async syncShop(shop: {
     id: string;
     shopDomain: string;
   }): Promise<boolean> {
