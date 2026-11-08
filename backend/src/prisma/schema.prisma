@@ -161,6 +161,7 @@ model ShopifyShop {
 
   connectedAt   DateTime? @db.Timestamptz(3)
   uninstalledAt DateTime? @db.Timestamptz(3)
+  lastSyncedAt  DateTime? @db.Timestamptz(3)
 
   members  ShopMember[]
   products Product[]
