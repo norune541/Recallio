@@ -461,7 +461,7 @@ export class ShopifyDao {
       where: {
         id: shopId,
         syncStatus: {
-          not: 'PENDING',
+          in: ['IDLE', 'FAILED'],
         },
       },
       data: {

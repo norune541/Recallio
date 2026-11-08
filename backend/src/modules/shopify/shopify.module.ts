@@ -13,11 +13,13 @@ import { ShopifySyncProvider } from './providers/shopify-sync.provider.js';
 import { GetShopUseCase } from './use-cases/shop/get-shop.js';
 import { DeleteShop } from './use-cases/shop/delete-shop.use-case.js';
 import { ClaudeModule } from '../claude/claude.module.js';
+import { SyncShopProductsUseCase } from './sync/sync-shop.sync.js';
 
 @Module({
   imports: [ClaudeModule],
   controllers: [ShopifyController],
   providers: [
+    SyncShopProductsUseCase,
     ShopifySyncProvider,
     ShopifyDao,
     ShopifyApiClient,

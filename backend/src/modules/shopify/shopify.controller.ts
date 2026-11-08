@@ -11,6 +11,7 @@ import {
   Req,
   Res,
   UseGuards,
+  Post,
 } from '@nestjs/common';
 import {
   ApiOperation,
@@ -46,12 +47,12 @@ import { UserNotFoundDto } from '../user/dto/UserNotFound.dto.js';
 import { BeginShopifyAuthUseCase } from './use-cases/auth/begin-shopify-auth.use-case.js';
 import { CompleteShopifyAuthUseCase } from './use-cases/auth/complete-shopify-auth.use-case.js';
 import { AnalyzeProductsUseCase } from './sync/analyze-products.sync.js';
+import { SyncShopProductsUseCase } from './sync/sync-shop.sync.js';
 
 import { GetShopUseCase } from './use-cases/shop/get-shop.js';
 import { DeleteShop } from './use-cases/shop/delete-shop.use-case.js';
 
 import { getProductsSchema } from '@recallio/shared/schemas';
-import { ProductReviewResponse } from './dto/product-review-response.js';
 import type { getProductsType } from '@recallio/shared/schemas';
 import type { Request, Response } from 'express';
 
@@ -64,6 +65,7 @@ export class ShopifyController {
     private readonly getProductsUseCase: AnalyzeProductsUseCase,
     private readonly getShopUseCase: GetShopUseCase,
     private readonly deleteShop: DeleteShop,
+    private readonly syncShopProductsUseCase: SyncShopProductsUseCase,
   ) {}
 
   /**
@@ -135,6 +137,30 @@ export class ShopifyController {
     await this.completeShopifyAuth.execute(query as Record<string, unknown>);
 
     return res.redirect(`http://localhost:5173/`);
+  }
+
+  @Post('sync')
+  @UseGuards(ClerkAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Start Shopify product synchronization or get current sync status',
+  })
+  @ApiOkResponse({
+    description: 'Current Shopify synchronization status',
+    schema: {
+      type: 'string',
+      enum: ['IDLE', 'PENDING', 'CONNECTED', 'FAILED'],
+    },
+  })
+  @ApiExtraModels(ShopNotFoundDto, UserNotFoundDto)
+  @ApiNotFoundResponse({
+    description: 'Shop or user not found (see `code`)',
+    schema: { oneOf: refs(ShopNotFoundDto, UserNotFoundDto) },
+  })
+  async syncShopProducts(@Req() req: Request) {
+    return await this.syncShopProductsUseCase.execute(
+      req.user.emailAddresses[0].emailAddress,
+    );
   }
 
   @Get('products')
