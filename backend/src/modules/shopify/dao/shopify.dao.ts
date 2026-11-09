@@ -252,20 +252,6 @@ export class ShopifyDao {
       },
     });
   }
-  async findProductsByShopId(shopId: string) {
-    return await this.prisma.product.findMany({
-      where: { shopId },
-      select: {
-        id: true,
-        shopifyProductId: true,
-        updatedAt: true,
-        syncedAt: true,
-      },
-      orderBy: {
-        updatedAt: 'desc',
-      },
-    });
-  }
 
   async findProductsUpdatedAt(shopId: string, shopifyProductIds: string[]) {
     return await this.prisma.product.findMany({
@@ -466,6 +452,54 @@ export class ShopifyDao {
       },
       data: {
         syncStatus: 'PENDING',
+      },
+    });
+  }
+  async findProductsByShopId(shopId: string, limit: number, after?: string) {
+    const products = await this.prisma.product.findMany({
+      where: { shopId },
+      include: {
+        variants: true,
+        productReview: true,
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+      take: limit + 1,
+      ...(after && {
+        cursor: { id: after },
+        skip: 1,
+      }),
+    });
+
+    const hasNextPage = products.length > limit;
+    const items = hasNextPage ? products.slice(0, limit) : products;
+
+    return {
+      items: items.map((product) => ({
+        ...product,
+        minVariantPrice: product.minVariantPrice.toString(),
+        maxVariantPrice: product.maxVariantPrice.toString(),
+        variants: product.variants.map((variant) => ({
+          ...variant,
+          price: variant.price.toString(),
+          compareAtPrice: variant.compareAtPrice?.toString() ?? null,
+        })),
+      })),
+      pageInfo: {
+        hasNextPage,
+        endCursor: items.at(-1)?.id ?? null,
+      },
+    };
+  }
+
+  async findProductById(shopId: string, shopifyProductId: string) {
+    return await this.prisma.product.findUnique({
+      where: {
+        shopId,
+        id: shopifyProductId,
+      },
+      include: {
+        variants: true,
+        productReview: true,
       },
     });
   }

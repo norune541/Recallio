@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
+import type { ElementType, ReactNode } from 'react';
 import {
   ArrowLeft,
+  Check,
   ExternalLink,
   Lightbulb,
   Package,
@@ -20,10 +22,9 @@ import { formatPrice } from '@/common/utils/formatPrice';
 import { truncateText } from '@/common/utils/truncateText';
 import { iconMap, colorMap } from '@/common/utils/icons';
 
-import { ProductDetailsSkeleton } from '../components/ProductDetailsSkeleton';
+import { ProductDetailsSkeleton } from '../skeletons/ProductDetailsSkeleton';
 
 import { useProduct } from '../hooks/getProduct';
-import type { ElementType, ReactNode } from 'react';
 
 export function GetProductDetailsPage() {
   const { productId } = useParams();
@@ -35,27 +36,32 @@ export function GetProductDetailsPage() {
     });
   }, [productId]);
 
-  const { data, isPending, isError } = useProduct(productId!);
+  const { data: product, isPending, isError } = useProduct(productId!);
 
   if (isPending) {
     return <ProductDetailsSkeleton />;
   }
-  if (isError || !data) {
+  if (isError || !product) {
     window.history.back();
-    return;
+    return null;
   }
 
-  const { product, aiReview } = data;
-  const aiInsights = aiReview.insights;
-  const price = product.priceRangeV2.minVariantPrice;
-  const maxPrice = product.priceRangeV2.maxVariantPrice;
+  const review = product.productReview;
+  const insights = review?.insights ?? [];
+
+  const minPrice = String(product.minVariantPrice);
+  const maxPrice = String(product.maxVariantPrice);
+  const currency = product.minVariantCurrency;
+  const hasSinglePrice = product.minVariantPrice === product.maxVariantPrice;
+
   const inventoryPercentage = Math.min(
     (product.totalInventory / 50) * 100,
     100,
   );
-  const productUrl =
-    data.product.onlineStoreUrl ??
-    `${data.shop.primaryDomain?.url}/products/${data.product.handle}`;
+
+  const isActive = product.status === 'ACTIVE';
+
+  const productUrl = product.onlineStorePreviewUrl;
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-[1440px] space-y-5 pb-8 sm:space-y-7 sm:pb-10">
@@ -69,29 +75,53 @@ export function GetProductDetailsPage() {
           Go back
         </Button>
 
-        <Button variant="link" size="sm" className="min-h-9 cursor-pointer">
-          <a href={productUrl} className="flex w-fit items-center">
-            <ExternalLink className="mr-2 h-4 w-4 shrink-0" />
-            View in Shopify
-          </a>
-        </Button>
+        {productUrl && (
+          <Button variant="link" size="sm" className="min-h-9 cursor-pointer">
+            <a
+              href={productUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex w-fit items-center"
+            >
+              <ExternalLink className="mr-2 h-4 w-4 shrink-0" />
+              View in Shopify
+            </a>
+          </Button>
+        )}
       </nav>
 
       <section className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
         <div className="flex min-w-0 items-start gap-3 sm:gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border bg-muted/40 sm:h-16 sm:w-16 sm:rounded-2xl">
-            <Package className="h-6 w-6 text-muted-foreground sm:h-8 sm:w-8" />
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted/40 sm:h-16 sm:w-16 sm:rounded-2xl">
+            {product.featuredImageUrl ? (
+              <img
+                src={product.featuredImageUrl}
+                alt={product.featuredImageAltText || product.title}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <Package className="h-6 w-6 text-muted-foreground sm:h-8 sm:w-8" />
+            )}
           </div>
 
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge className="bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400">
+              <Badge
+                variant={isActive ? 'default' : 'secondary'}
+                className={
+                  isActive
+                    ? 'bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400'
+                    : undefined
+                }
+              >
                 {product.status}
               </Badge>
 
-              <Badge variant="outline" className="p-2.5">
-                {product.productType}
-              </Badge>
+              {product.productType && (
+                <Badge variant="outline" className="p-2.5">
+                  {product.productType}
+                </Badge>
+              )}
             </div>
 
             <h1 className="break-words text-xl font-semibold tracking-tight sm:text-2xl lg:text-3xl">
@@ -121,11 +151,11 @@ export function GetProductDetailsPage() {
       >
         <MetricCard
           label="Current price"
-          value={formatPrice(price.amount, price.currencyCode)}
+          value={formatPrice(minPrice, currency)}
           description={
-            price.amount === maxPrice.amount
+            hasSinglePrice
               ? 'Single price across variants'
-              : `Up to ${formatPrice(maxPrice.amount, maxPrice.currencyCode)}`
+              : `Up to ${formatPrice(maxPrice, product.maxVariantCurrency)}`
           }
           icon={Tag}
           detail="Lowest variant price"
@@ -154,12 +184,12 @@ export function GetProductDetailsPage() {
 
         <MetricCard
           label="Variants"
-          value={String(product.variants.nodes.length)}
+          value={String(product.variants.length)}
           description="Product variants"
           icon={Package}
           detail={
             <div className="space-y-1.5">
-              {product.variants.nodes.slice(0, 3).map((variant) => (
+              {product.variants.slice(0, 3).map((variant) => (
                 <div
                   key={variant.id}
                   className="flex items-center justify-between gap-2 text-xs"
@@ -168,18 +198,18 @@ export function GetProductDetailsPage() {
                     {variant.title}
                   </span>
                   <span className="shrink-0 font-medium">
-                    {formatPrice(variant.price, price.currencyCode)}
+                    {formatPrice(variant.price, currency)}
                   </span>
                 </div>
               ))}
 
-              {product.variants.nodes.length > 3 && (
+              {product.variants.length > 3 && (
                 <p className="text-xs text-muted-foreground">
-                  +{product.variants.nodes.length - 3} more variants
+                  +{product.variants.length - 3} more variants
                 </p>
               )}
 
-              {product.variants.nodes.length === 0 && (
+              {product.variants.length === 0 && (
                 <p className="text-xs text-muted-foreground">
                   No variants available
                 </p>
@@ -189,19 +219,16 @@ export function GetProductDetailsPage() {
         />
 
         <MetricCard
-          label="AI insights"
-          value={String(aiInsights.length)}
-          description="Suggested improvements"
+          label="AI review"
+          value={String(insights.length)}
+          description="Insights highlighted"
           icon={Sparkles}
           detail={
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">High / Medium / Low</span>
-              <span className="font-medium">
-                {(['high', 'medium', 'low'] as const)
-                  .map((p) => aiInsights.filter((i) => i.priority === p).length)
-                  .join(' / ')}
-              </span>
-            </div>
+            <p className="text-xs text-muted-foreground">
+              {insights.length > 0
+                ? truncateText(insights[0].description, 100)
+                : 'No AI review available yet'}
+            </p>
           }
         />
       </section>
@@ -221,7 +248,7 @@ export function GetProductDetailsPage() {
               </CardTitle>
 
               <p className="text-sm text-muted-foreground">
-                A quick summary of this product and its main opportunities.
+                A quick summary of this product and its main strengths.
               </p>
             </div>
           </div>
@@ -229,27 +256,38 @@ export function GetProductDetailsPage() {
 
         <CardContent className="space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
           <p className="text-sm leading-6 text-muted-foreground sm:leading-7">
-            <strong className="text-foreground">{product.title}</strong> has
-            &#32;
-            {product.totalInventory} units in inventory. The following
-            recommendations are based on the current AI review.
+            <strong className="text-foreground">{product.title}</strong> has{' '}
+            {product.totalInventory} units in inventory.{' '}
+            {insights.length > 0
+              ? `The AI review identified ${insights.length} product insights.`
+              : 'The AI review for this product is not ready yet.'}
           </p>
 
-          <div className="grid gap-2 sm:grid-cols-3 sm:gap-3">
-            {aiReview.insights.slice(0, 3).map((insight, index) => {
-              const Icon = iconMap[insight.category];
+          {insights.length > 0 && (
+            <div className="grid gap-2 sm:grid-cols-3 sm:gap-3">
+              {insights.slice(0, 3).map((insight, index) => {
+                const Icon =
+                  iconMap[insight.category as keyof typeof iconMap] ?? Package;
 
-              return (
-                <BriefingItem
-                  key={`${insight.category}-${index}`}
-                  icon={Icon}
-                  title={insight.title}
-                  text={truncateText(insight.description, 90)}
-                  iconClass={colorMap[insight.category]}
-                />
-              );
-            })}
-          </div>
+                const color =
+                  colorMap[insight.category as keyof typeof colorMap] ??
+                  'text-primary';
+
+                return (
+                  <div
+                    key={`${insight.title}-${index}`}
+                    className="flex min-w-0 items-start gap-2 rounded-lg bg-muted/50 p-3"
+                  >
+                    <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${color}`} />
+
+                    <p className="min-w-0 text-sm font-medium">
+                      {insight.title}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -267,13 +305,27 @@ export function GetProductDetailsPage() {
                 </span>
               </InfoRow>
 
+              <InfoRow label="Shopify ID">
+                <span className="break-all font-mono text-xs">
+                  {product.shopifyProductId}
+                </span>
+              </InfoRow>
+
               <InfoRow label="Vendor">{product.vendor}</InfoRow>
               <InfoRow label="Product type">{product.productType}</InfoRow>
               <InfoRow label="Created">
                 {formatSmartUSDate(product.createdAt)}
               </InfoRow>
+              {product.publishedAt && (
+                <InfoRow label="Published">
+                  {formatSmartUSDate(product.publishedAt)}
+                </InfoRow>
+              )}
               <InfoRow label="Last updated">
                 {formatSmartUSDate(product.updatedAt)}
+              </InfoRow>
+              <InfoRow label="Last synced">
+                {formatSmartUSDate(product.syncedAt)}
               </InfoRow>
               <Separator />
 
@@ -281,21 +333,23 @@ export function GetProductDetailsPage() {
                 <h3 className="text-sm font-medium">Description</h3>
 
                 <p className="text-sm leading-6 text-muted-foreground">
-                  {product.description}
+                  {product.description || 'No description available'}
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">Tags</h3>
+              {product.tags.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">Tags</h3>
 
-                <div className="flex flex-wrap gap-2">
-                  {product.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary">
-                      {tag}
-                    </Badge>
-                  ))}
+                  <div className="flex flex-wrap gap-2">
+                    {product.tags.map((tag) => (
+                      <Badge key={tag} variant="secondary">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
@@ -309,17 +363,16 @@ export function GetProductDetailsPage() {
 
             <CardContent className="space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
               <p className="text-sm leading-6 text-muted-foreground">
-                <strong className="text-foreground">{product.title}</strong> has
-                &#32;
-                {product.variants.nodes.length} variants with &#32;
-                {product.totalInventory} units available across all options.
+                <strong className="text-foreground">{product.title}</strong> has{' '}
+                {product.variants.length} variants with {product.totalInventory}{' '}
+                units available across all options.
               </p>
 
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <div className="rounded-lg border p-3">
                   <p className="text-xs text-muted-foreground">Variants</p>
                   <p className="mt-1 text-lg font-semibold">
-                    {product.variants.nodes.length}
+                    {product.variants.length}
                   </p>
                 </div>
 
@@ -333,25 +386,27 @@ export function GetProductDetailsPage() {
                 <div className="col-span-2 rounded-lg border p-3 sm:col-span-1">
                   <p className="text-xs text-muted-foreground">Price range</p>
                   <p className="mt-1 text-lg font-semibold">
-                    {formatPrice(
-                      product.priceRangeV2.minVariantPrice.amount,
-                      product.priceRangeV2.minVariantPrice.currencyCode,
-                    )}
-                    {' – '}
-                    {formatPrice(
-                      product.priceRangeV2.maxVariantPrice.amount,
-                      product.priceRangeV2.maxVariantPrice.currencyCode,
+                    {formatPrice(minPrice, currency)}
+                    {!hasSinglePrice && (
+                      <>
+                        {' – '}
+                        {formatPrice(maxPrice, product.maxVariantCurrency)}
+                      </>
                     )}
                   </p>
                 </div>
               </div>
 
               <div className="space-y-2">
-                {product.variants.nodes.map((variant) => {
+                {product.variants.map((variant) => {
                   const isOutOfStock = variant.inventoryQuantity <= 0;
                   const isLowStock =
                     variant.inventoryQuantity > 0 &&
                     variant.inventoryQuantity <= 5;
+
+                  const hasDiscount =
+                    !!variant.compareAtPrice &&
+                    Number(variant.compareAtPrice) > Number(variant.price);
 
                   const borderColor = isOutOfStock
                     ? 'border-red-500'
@@ -371,6 +426,10 @@ export function GetProductDetailsPage() {
                       ? 'bg-orange-500/1'
                       : 'bg-[#908fff]/1';
 
+                  const variantOptions = Array.isArray(variant.selectedOptions)
+                    ? variant.selectedOptions
+                    : [];
+
                   return (
                     <div
                       key={variant.id}
@@ -382,19 +441,32 @@ export function GetProductDetailsPage() {
                         </p>
 
                         <p className="text-xs text-muted-foreground">
-                          {variant.selectedOptions
-                            .map((option) => `${option.name}: ${option.value}`)
-                            .join(' · ')}
+                          {variantOptions.length > 0
+                            ? variantOptions
+                                .map(
+                                  (option) => `${option.name}: ${option.value}`,
+                                )
+                                .join(' · ')
+                            : 'No options selected'}
                         </p>
+
+                        {variant.sku && (
+                          <p className="truncate font-mono text-xs text-muted-foreground">
+                            SKU: {variant.sku}
+                          </p>
+                        )}
                       </div>
 
                       <div className="shrink-0 text-right">
                         <p className="text-sm font-semibold">
-                          {formatPrice(
-                            variant.price,
-                            product.priceRangeV2.minVariantPrice.currencyCode,
-                          )}
+                          {formatPrice(variant.price, currency)}
                         </p>
+
+                        {hasDiscount && (
+                          <p className="text-xs text-muted-foreground line-through">
+                            {formatPrice(variant.compareAtPrice!, currency)}
+                          </p>
+                        )}
 
                         <p className={`text-xs font-medium ${textColor}`}>
                           {isOutOfStock
@@ -421,10 +493,30 @@ export function GetProductDetailsPage() {
             <CardContent className="space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">
+                  Current SEO title
+                </p>
+                <p className="break-words text-sm text-muted-foreground">
+                  {product.seoTitle || 'Not set'}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">
                   Suggested SEO title
                 </p>
                 <p className="break-words text-sm font-medium">
-                  {aiReview.seo.title || 'No title suggestion available'}
+                  {review?.seoTitle || 'No title suggestion available'}
+                </p>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">
+                  Current meta description
+                </p>
+                <p className="break-words text-sm leading-6 text-muted-foreground">
+                  {product.seoDescription || 'Not set'}
                 </p>
               </div>
 
@@ -433,7 +525,7 @@ export function GetProductDetailsPage() {
                   Suggested meta description
                 </p>
                 <p className="break-words text-sm leading-6 text-muted-foreground">
-                  {aiReview.seo.metaDescription ||
+                  {review?.seoMetaDescription ||
                     'No meta description suggestion available'}
                 </p>
               </div>
@@ -452,46 +544,50 @@ export function GetProductDetailsPage() {
               <div className="flex items-center justify-between gap-3">
                 <CardTitle className="text-base">AI insights</CardTitle>
 
-                <Badge variant="secondary">{aiInsights.length}</Badge>
+                <Badge variant="secondary">{insights.length}</Badge>
               </div>
 
               <p className="text-sm text-muted-foreground">
-                Suggested improvements for this product.
+                Insights highlighted in the AI review.
               </p>
             </CardHeader>
 
             <CardContent className="space-y-4 px-4 pb-4 sm:space-y-5 sm:px-6 sm:pb-6">
-              {aiInsights.map((insight, index) => {
-                const Icon = iconMap[insight.category];
+              {insights.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No insights available yet.
+                </p>
+              )}
+
+              {insights.map((insight, index) => {
+                const Icon =
+                  iconMap[insight.category as keyof typeof iconMap] ?? Package;
+
+                const color =
+                  colorMap[insight.category as keyof typeof colorMap] ??
+                  'text-primary';
 
                 return (
-                  <div key={insight.title} className="space-y-3">
+                  <div key={`${insight.title}-${index}`} className="space-y-3">
                     <div className="flex items-start gap-3">
                       <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
-                        <Icon
-                          className={`h-4 w-4 ${colorMap[insight.category]}`}
-                        />
+                        <Icon className={`h-5 w-5 ${color}`} />
                       </div>
 
-                      <div className="min-w-0 flex-1 space-y-2">
-                        <p className="text-sm font-medium leading-5">
-                          {insight.title}
-                        </p>
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-medium">{insight.title}</p>
+                          <Badge variant="outline">{insight.category}</Badge>
+                          <Badge variant="secondary">{insight.priority}</Badge>
+                        </div>
 
                         <p className="text-sm leading-6 text-muted-foreground">
                           {insight.description}
                         </p>
-
-                        <Badge
-                          variant="outline"
-                          className="max-w-full whitespace-normal"
-                        >
-                          {insight.category} · {insight.priority}
-                        </Badge>
                       </div>
                     </div>
 
-                    {index < aiInsights.length - 1 && <Separator />}
+                    {index < insights.length - 1 && <Separator />}
                   </div>
                 );
               })}
@@ -543,30 +639,6 @@ function MetricCard({
         <div className="mt-3 min-w-0 sm:mt-4">{detail}</div>
       </CardContent>
     </Card>
-  );
-}
-
-function BriefingItem({
-  icon: Icon,
-  title,
-  text,
-  iconClass,
-}: {
-  icon: ElementType;
-  title: string;
-  text: string;
-  iconClass: string;
-}) {
-  return (
-    <div className="flex items-start gap-2.5 rounded-lg border p-3 sm:p-4">
-      <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${iconClass}`} />
-
-      <div className="min-w-0 space-y-1">
-        <p className="text-sm font-medium">{title}</p>
-
-        <p className="text-sm leading-5 text-muted-foreground">{text}</p>
-      </div>
-    </div>
   );
 }
 

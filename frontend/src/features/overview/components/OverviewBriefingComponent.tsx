@@ -10,56 +10,57 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 import { useProducts } from '../hooks/getProducts';
 import { truncateText } from '@/common/utils/truncateText';
 
-type ProductsResponse = NonNullable<ReturnType<typeof useProducts>['data']>;
-
-type AiReview = NonNullable<ProductsResponse['pages'][number]['aiReview']>;
-
-type Insight = AiReview['insights'][number];
-
 const priorityConfig = {
   high: {
+    rank: 0,
     label: 'High priority',
     className: 'text-amber-600',
     icon: AlertTriangle,
   },
   medium: {
+    rank: 1,
     label: 'Opportunity',
     className: 'text-violet-600',
     icon: Lightbulb,
   },
   low: {
+    rank: 2,
     label: 'Suggestion',
     className: 'text-emerald-600',
     icon: CheckCircle2,
   },
-} satisfies Record<
-  Insight['priority'],
-  {
-    label: string;
-    className: string;
-    icon: typeof AlertTriangle;
-  }
->;
-
-const categoryLabels = {
-  content: 'Content',
-  seo: 'SEO',
-  inventory: 'Inventory',
-  pricing: 'Pricing',
-  product: 'Product',
-} satisfies Record<Insight['category'], string>;
-
-type OverviewIntelligenceBriefingProps = {
-  aiReview: AiReview | undefined;
 };
 
-export function OverviewIntelligenceBriefing({
-  aiReview,
-}: OverviewIntelligenceBriefingProps) {
+type Insight = {
+  category: string;
+  priority: keyof typeof priorityConfig;
+  title: string;
+  description: string;
+};
+
+export function OverviewIntelligenceBriefing() {
+  const { data, isPending, isError, error } = useProducts();
+
+  // InfiniteQuery: insights from all pages already loaded.
+  const insights = (
+    data?.pages
+      .flatMap((page) => page.items)
+      .flatMap(
+        (product) =>
+          (product.productReview?.insights as Insight[] | undefined) ?? [],
+      ) ?? []
+  )
+    .sort(
+      (a, b) =>
+        priorityConfig[a.priority].rank - priorityConfig[b.priority].rank,
+    )
+    .slice(0, 3);
+
   return (
     <section>
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -84,23 +85,30 @@ export function OverviewIntelligenceBriefing({
             </div>
 
             <div className="min-w-0 flex-1">
-              <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
-                <div>
-                  <h3 className="text-lg font-semibold tracking-tight">
-                    Here's what deserves your attention
-                  </h3>
+              <h3 className="text-lg font-semibold tracking-tight">
+                Here's what deserves your attention
+              </h3>
 
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    AI-powered insights based on your store products.
-                  </p>
-                </div>
-              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                AI-powered insights based on your store products.
+              </p>
 
-              {aiReview?.insights.length ? (
+              {isPending ? (
                 <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {aiReview.insights.map((insight, index) => {
-                    const config = priorityConfig[insight.priority];
-                    const Icon = config.icon;
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <Skeleton key={index} className="h-36 rounded-xl" />
+                  ))}
+                </div>
+              ) : isError ? (
+                <p className="mt-5 text-sm text-destructive">{error.message}</p>
+              ) : insights.length > 0 ? (
+                <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {insights.map((insight, index) => {
+                    const {
+                      label,
+                      className,
+                      icon: Icon,
+                    } = priorityConfig[insight.priority];
 
                     return (
                       <div
@@ -108,12 +116,12 @@ export function OverviewIntelligenceBriefing({
                         className="rounded-xl border p-4"
                       >
                         <div
-                          className={`mb-3 flex items-center gap-2 ${config.className}`}
+                          className={`mb-3 flex items-center gap-2 ${className}`}
                         >
                           <Icon className="size-4" />
 
                           <span className="text-xs font-medium uppercase tracking-wide">
-                            {config.label}
+                            {label}
                           </span>
                         </div>
 
@@ -125,8 +133,11 @@ export function OverviewIntelligenceBriefing({
                           {truncateText(insight.description, 120)}
                         </p>
 
-                        <Badge variant="outline" className="mt-3 font-normal">
-                          {categoryLabels[insight.category]}
+                        <Badge
+                          variant="outline"
+                          className="mt-3 font-normal capitalize"
+                        >
+                          {insight.category}
                         </Badge>
                       </div>
                     );

@@ -11,16 +11,18 @@ import {
   TrendingUp,
   Search,
 } from 'lucide-react';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 import { useShopify } from '@/common/hooks/getShopify';
 import { useProducts } from '../hooks/getProducts';
+import { useSyncShopify } from '../hooks/useSyncShopify';
 
-import { ProductIntelligence } from '../components/CatalogComponent';
+import { ProductIntelligence } from '../components/ProductIntelligence';
 import { ShopNotConnectedMainComponent } from '@/components/ShopNotConnectedMainComponent';
-import { OverviewSkeleton } from '../components/OverviewSkeleton';
+import { OverviewSkeleton } from '../skeletons/OverviewSkeleton';
 import { OverviewKpiCards } from '../components/OverviewKpiCards';
 import { OverviewIntelligenceBriefing } from '../components/OverviewBriefingComponent';
 
@@ -61,7 +63,38 @@ const weeklyActivity = [
   { day: 'Sun', value: 69 },
 ];
 
+type Insight = {
+  category: 'content' | 'seo' | 'inventory' | 'pricing' | 'product';
+  priority: 'high' | 'medium' | 'low';
+  title: string;
+  description: string;
+};
+
+function isInsight(value: unknown): value is Insight {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const insight = value as Record<string, unknown>;
+
+  return (
+    typeof insight.title === 'string' &&
+    typeof insight.description === 'string' &&
+    ['content', 'seo', 'inventory', 'pricing', 'product'].includes(
+      insight.category as string,
+    ) &&
+    ['high', 'medium', 'low'].includes(insight.priority as string)
+  );
+}
+
 export function OverviewPage() {
+  const {
+    syncStatus,
+    isSyncing,
+    isSyncError,
+    isLoading: isSyncLoading,
+  } = useSyncShopify();
+
   const {
     isPending: isShopifyPending,
     isError: isShopifyError,
@@ -78,27 +111,66 @@ export function OverviewPage() {
     isFetchingNextPage,
   } = useProducts();
 
-  if (isProductsPending || isShopifyPending) {
-    return <OverviewSkeleton />;
-  }
-
-  if (
+  const isShopNotFound =
     isShopifyError &&
     shopifyError &&
     typeof shopifyError === 'object' &&
     'code' in shopifyError &&
-    shopifyError.code === 'SHOP_NOT_FOUND'
-  ) {
+    shopifyError.code === 'SHOP_NOT_FOUND';
+
+  if (isShopNotFound) {
     return <ShopNotConnectedMainComponent />;
   }
 
-  const aiReview = data?.pages[0]?.aiReview;
+  if (isSyncLoading || isSyncing || isShopifyPending || isProductsPending) {
+    return <OverviewSkeleton />;
+  }
+
+  const products = data?.items ?? [];
+
+  const insights = products.flatMap((product) => {
+    const rawInsights = product.productReview?.insights;
+
+    if (!Array.isArray(rawInsights)) {
+      return [];
+    }
+
+    return rawInsights.filter(isInsight);
+  });
+
+  const categoryConfig = {
+    content: {
+      icon: MessageSquareText,
+      className: 'bg-sky-100 text-sky-700',
+    },
+    seo: {
+      icon: Search,
+      className: 'bg-violet-100 text-violet-700',
+    },
+    inventory: {
+      icon: Package,
+      className: 'bg-amber-100 text-amber-700',
+    },
+    pricing: {
+      icon: Lightbulb,
+      className: 'bg-emerald-100 text-emerald-700',
+    },
+    product: {
+      icon: Lightbulb,
+      className: 'bg-violet-100 text-violet-700',
+    },
+  };
+
+  const priorityConfig = {
+    high: 'bg-amber-500',
+    medium: 'bg-violet-500',
+    low: 'bg-emerald-500',
+  };
 
   return (
     <div className="space-y-8 pb-8">
-      {/* ======================================================
-          PAGE HEADER
-      ====================================================== */}
+      {/* PAGE HEADER */}
+
       <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
         <div>
           <div className="mb-2 flex items-center gap-2">
@@ -117,25 +189,55 @@ export function OverviewPage() {
           </p>
         </div>
       </section>
-      {/* ======================================================
-          KPI CARDS
-      ====================================================== */}
-      <OverviewKpiCards />
-      {/* ======================================================
-          AI INSIGHTS
-      ====================================================== */}
-      <OverviewIntelligenceBriefing aiReview={aiReview} />
-      {/* ======================================================
-          ANALYTICS + ATTENTION
-      ====================================================== */}
-      <section className="grid gap-4 xl:grid-cols-5">
-        {/* Weekly activity */}
 
+      {/* SYNC STATUS */}
+
+      {isSyncError && (
+        <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-destructive" />
+
+          <div>
+            <p className="text-sm font-medium">
+              Shopify synchronization failed
+            </p>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              We couldn't synchronize your store products. Please try again.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* PRODUCTS ERROR */}
+
+      {isProductsError && (
+        <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-destructive" />
+
+          <div>
+            <p className="text-sm font-medium">Failed to load products</p>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              {productsError instanceof Error
+                ? productsError.message
+                : 'Something went wrong while loading your products.'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <OverviewKpiCards />
+
+      <OverviewIntelligenceBriefing products={data?.items ?? []} />
+
+      <section className="grid gap-4 xl:grid-cols-5">
         <Card className="xl:col-span-3">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
               <Badge className="mb-4">IN DEVELOPMENT</Badge>
+
               <CardTitle className="text-base">Customer activity</CardTitle>
+
               <p className="mt-1 text-sm text-muted-foreground">
                 Conversations processed by AI
               </p>
@@ -168,8 +270,6 @@ export function OverviewPage() {
                 Last 7 days
               </Badge>
             </div>
-
-            {/* Lightweight chart without a charting dependency */}
 
             <div
               className="mt-8 grid h-44 grid-cols-7 items-end gap-3"
@@ -205,17 +305,16 @@ export function OverviewPage() {
           </CardContent>
         </Card>
 
-        {/* Priority actions */}
+        {/* PRIORITY ACTIONS */}
 
         <Card className="xl:col-span-2">
           <CardHeader className="pb-3">
             <Badge className="mb-4">IN DEVELOPMENT</Badge>
+
             <div className="flex items-center justify-between gap-3">
               <CardTitle className="text-base">Priority actions</CardTitle>
 
-              <Badge variant="secondary">
-                {aiReview?.insights.length ?? 0} items
-              </Badge>
+              <Badge variant="secondary">{insights.length} items</Badge>
             </div>
 
             <p className="text-sm text-muted-foreground">
@@ -224,37 +323,8 @@ export function OverviewPage() {
           </CardHeader>
 
           <CardContent className="space-y-1">
-            {aiReview?.insights.length ? (
-              aiReview.insights.slice(0, 3).map((insight, index) => {
-                const categoryConfig = {
-                  content: {
-                    icon: MessageSquareText,
-                    className: 'bg-sky-100 text-sky-700',
-                  },
-                  seo: {
-                    icon: Search,
-                    className: 'bg-violet-100 text-violet-700',
-                  },
-                  inventory: {
-                    icon: Package,
-                    className: 'bg-amber-100 text-amber-700',
-                  },
-                  pricing: {
-                    icon: Lightbulb,
-                    className: 'bg-emerald-100 text-emerald-700',
-                  },
-                  product: {
-                    icon: Lightbulb,
-                    className: 'bg-violet-100 text-violet-700',
-                  },
-                };
-
-                const priorityConfig = {
-                  high: 'bg-amber-500',
-                  medium: 'bg-violet-500',
-                  low: 'bg-emerald-500',
-                };
-
+            {insights.length > 0 ? (
+              insights.slice(0, 3).map((insight, index) => {
                 const config = categoryConfig[insight.category];
                 const Icon = config.icon;
 
@@ -296,6 +366,7 @@ export function OverviewPage() {
             ) : (
               <div className="py-8 text-center">
                 <p className="text-sm font-medium">No priority actions yet</p>
+
                 <p className="mt-1 text-xs text-muted-foreground">
                   AI insights will appear here after product analysis.
                 </p>
@@ -308,7 +379,7 @@ export function OverviewPage() {
               onClick={() =>
                 console.log('[Recallio] View all priority actions')
               }
-              disabled={!aiReview?.insights.length}
+              disabled={!insights.length}
             >
               View all insights
               <ArrowRight className="size-4" />
@@ -316,11 +387,20 @@ export function OverviewPage() {
           </CardContent>
         </Card>
       </section>
+
+      {/* PRODUCT INTELLIGENCE */}
+
       <ProductIntelligence />
+
+      {/* RECENT ACTIVITY + AI COVERAGE */}
+
       <section className="grid gap-4 lg:grid-cols-2">
+        {/* RECENT ACTIVITY */}
+
         <Card>
           <CardHeader>
             <Badge>IN DEVELOPMENT</Badge>
+
             <div className="flex items-center justify-between gap-3">
               <CardTitle className="text-base">Recent activity</CardTitle>
 
@@ -371,10 +451,12 @@ export function OverviewPage() {
           </CardContent>
         </Card>
 
-        {/* AI coverage */}
+        {/* AI COVERAGE */}
+
         <Card>
           <CardHeader>
             <Badge>IN DEVELOPMENT</Badge>
+
             <div className="flex items-center gap-2">
               <div className="flex size-9 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
                 <BrainCircuitIcon />
@@ -394,6 +476,7 @@ export function OverviewPage() {
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm">Conversation analysis</span>
+
                 <span className="text-sm font-medium">86%</span>
               </div>
 
@@ -415,6 +498,7 @@ export function OverviewPage() {
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm">Product insight coverage</span>
+
                 <span className="text-sm font-medium">72%</span>
               </div>
 
@@ -436,6 +520,7 @@ export function OverviewPage() {
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm">Support trend detection</span>
+
                 <span className="text-sm font-medium">64%</span>
               </div>
 
@@ -476,12 +561,23 @@ export function OverviewPage() {
           </CardContent>
         </Card>
       </section>
+
+      {/* PAGINATION */}
+
+      {hasNextPage && (
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+          >
+            {isFetchingNextPage ? 'Loading...' : 'Load more products'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
-
-// Small local icon component to keep the dashboard independent
-// of an additional icon or charting library.
 
 function BrainCircuitIcon() {
   return <Sparkles className="size-4" />;

@@ -6,12 +6,12 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Param,
   Query,
   Req,
   Res,
   UseGuards,
   Post,
+  Param,
 } from '@nestjs/common';
 import {
   ApiOperation,
@@ -35,6 +35,8 @@ import {
   ShopifyCallbackResponseDto,
 } from './dto/shopify.dto.js';
 import { ShopifyProductsResponseDto } from './dto/shopify-products.dto.js';
+import { ProductResponseDto } from './dto/shopify-product.dto.js';
+
 import {
   ShopifyShopDto,
   ShopifyShopBadGatewayErrorDto,
@@ -46,8 +48,9 @@ import { UserNotFoundDto } from '../user/dto/UserNotFound.dto.js';
 
 import { BeginShopifyAuthUseCase } from './use-cases/auth/begin-shopify-auth.use-case.js';
 import { CompleteShopifyAuthUseCase } from './use-cases/auth/complete-shopify-auth.use-case.js';
-import { AnalyzeProductsUseCase } from './sync/analyze-products.sync.js';
+import { GetProductsUseCase } from './use-cases/shop/get-products.js';
 import { SyncShopProductsUseCase } from './sync/sync-shop.sync.js';
+import { GetProductUseCase } from './use-cases/shop/get-product.js';
 
 import { GetShopUseCase } from './use-cases/shop/get-shop.js';
 import { DeleteShop } from './use-cases/shop/delete-shop.use-case.js';
@@ -62,8 +65,9 @@ export class ShopifyController {
   constructor(
     private readonly beginShopifyAuth: BeginShopifyAuthUseCase,
     private readonly completeShopifyAuth: CompleteShopifyAuthUseCase,
-    private readonly getProductsUseCase: AnalyzeProductsUseCase,
+    private readonly getProductsUseCase: GetProductsUseCase,
     private readonly getShopUseCase: GetShopUseCase,
+    private readonly getProductUseCase: GetProductUseCase,
     private readonly deleteShop: DeleteShop,
     private readonly syncShopProductsUseCase: SyncShopProductsUseCase,
   ) {}
@@ -172,11 +176,11 @@ export class ShopifyController {
   @Get('products')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({
-    summary: 'Get Shopify products for the current authenticated user',
+    summary:
+      'Get Shopify products from database for the current authenticated user',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'List of products for the user shop',
+  @ApiOkResponse({
+    description: 'Paginated list of products with variants and AI reviews',
     type: ShopifyProductsResponseDto,
   })
   @ApiQuery({
@@ -189,13 +193,13 @@ export class ShopifyController {
     name: 'after',
     required: false,
     type: String,
+    description: 'Product ID cursor from the previous page',
   })
   @ApiExtraModels(ShopNotFoundDto, UserNotFoundDto)
   @ApiNotFoundResponse({
     description: 'Shop or user not found (see `code`)',
     schema: { oneOf: refs(ShopNotFoundDto, UserNotFoundDto) },
   })
-  @ApiBadGatewayResponse({ type: ShopifyShopBadGatewayErrorDto })
   async getProducts(
     @Req() req: Request,
     @Query() query: getProductsType,
@@ -206,53 +210,41 @@ export class ShopifyController {
       throw new BadRequestException('Validation failed');
     }
 
-    return await this.getProductsUseCase.execute(
+    return this.getProductsUseCase.execute(
       req.user.emailAddresses[0].emailAddress,
       parsedQuery.data.limit,
       parsedQuery.data.after,
     );
   }
 
-  // @Get('product/:productId')
-  // @UseGuards(ClerkAuthGuard)
-  // @ApiOperation({ summary: 'Analyze Shopify product with AI' })
-  // @ApiOkResponse({
-  //   description: 'Shopify product details with AI analysis',
-  //   type: ProductReviewResponse,
-  // })
-  // @ApiBadRequestResponse({
-  //   description: 'productId is required',
-  // })
-  // @ApiExtraModels(ShopNotFoundDto, UserNotFoundDto)
-  // @ApiNotFoundResponse({
-  //   description: 'Shop or user not found (see `code`)',
-  //   schema: { oneOf: refs(ShopNotFoundDto, UserNotFoundDto) },
-  // })
-  // @ApiParam({
-  //   name: 'productId',
-  //   required: true,
-  //   type: String,
-  //   description: 'Shopify product ID (GID)',
-  //   example: 'gid://shopify/Product/123456789',
-  // })
-  // async getProduct(
-  //   @Req() req: Request,
-  //   @Param('productId') productId: string,
-  // ): Promise<ProductReviewResponse> {
-  //   const SHOPIFY_PRODUCT_ID_REGEX = /^gid:\/\/shopify\/Product\/\d+$/;
-
-  //   if (typeof productId !== 'string' || !productId?.trim()) {
-  //     throw new BadRequestException('productId is required');
-  //   }
-  //   if (!SHOPIFY_PRODUCT_ID_REGEX.test(productId)) {
-  //     throw new BadRequestException('Invalid Shopify product ID');
-  //   }
-
-  //   return this.analyzeProduct.execute(
-  //     req.user.emailAddresses[0].emailAddress,
-  //     productId,
-  //   );
-  // }
+  @Get('products/:productId')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Analyze Shopify product with AI' })
+  @ApiOkResponse({
+    description: 'Shopify product details with AI analysis',
+    type: ProductResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'productId is required',
+  })
+  @ApiExtraModels(ShopNotFoundDto, UserNotFoundDto)
+  @ApiNotFoundResponse({
+    description: 'Shop or user not found (see `code`)',
+    schema: { oneOf: refs(ShopNotFoundDto, UserNotFoundDto) },
+  })
+  @ApiParam({
+    name: 'productId',
+    required: true,
+    type: String,
+    description: 'Shopify product ID (GID)',
+    example: 'gid://shopify/Product/123456789',
+  })
+  async getProduct(@Req() req: Request, @Param('productId') productId: string) {
+    return await this.getProductUseCase.execute(
+      req.user.emailAddresses[0].emailAddress,
+      productId,
+    );
+  }
 
   @Get('shop')
   @UseGuards(ClerkAuthGuard)

@@ -78,7 +78,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Shopify products for the current authenticated user */
+        /** Get Shopify products from database for the current authenticated user */
         get: operations["ShopifyController_getProducts"];
         put?: never;
         post?: never;
@@ -88,14 +88,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/integrations/shopify/shop": {
+    "/api/integrations/shopify/products/{productId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Shopify shop details for the current authenticated user */
+        /** Analyze Shopify product with AI */
         get: operations["ShopifyController_getShop"];
         put?: never;
         post?: never;
@@ -210,82 +210,84 @@ export interface components {
              */
             error: string;
         };
-        ShopifyImageDto: {
+        ProductVariantDto: {
+            /** @example uuid-variant-id */
+            id: string;
+            /** @example gid://shopify/ProductVariant/123456789 */
+            shopifyVariantId: string;
+            /** @example Running Shoes - Size 42 */
+            title: string;
+            /** @example SHOES-42 */
+            sku: string | null;
+            /** @example 1234567890123 */
+            barcode: string | null;
+            /** @example 59.99 */
+            price: string;
+            /** @example 79.99 */
+            compareAtPrice: string | null;
+            /** @example 10 */
+            inventoryQuantity: number;
             /**
-             * @description Image URL
-             * @example https://cdn.shopify.com/s/files/1/0000/0000/products/shoes.jpg
+             * @example CONTINUE
+             * @enum {string}
              */
-            url: string;
+            inventoryPolicy: "DENY" | "CONTINUE";
             /**
-             * @description Image alternative text
-             * @example Red running shoes
+             * @description Selected variant options
+             * @example [
+             *       {
+             *         "name": "Size",
+             *         "value": "42"
+             *       }
+             *     ]
              */
-            altText: string | null;
-            /**
-             * @description Original image width in pixels, null if the image is not hosted by Shopify
-             * @example 1200
-             */
-            width: number | null;
-            /**
-             * @description Original image height in pixels, null if the image is not hosted by Shopify
-             * @example 800
-             */
-            height: number | null;
+            selectedOptions: Record<string, never>;
         };
-        ShopifyMediaPreviewDto: {
-            /** @description Preview image of the media */
-            image: components["schemas"]["ShopifyImageDto"] | null;
-        };
-        ShopifyFeaturedMediaDto: {
-            /** @description Preview of the featured media */
-            preview: components["schemas"]["ShopifyMediaPreviewDto"] | null;
-        };
-        ShopifyMoneyDto: {
+        ProductReviewDto: {
+            /** @example Running Shoes Review */
+            seoTitle: string;
+            /** @example Discover the best running shoes for everyday training. */
+            seoMetaDescription: string;
             /**
-             * @description Product price amount
-             * @example 59.99
+             * @description AI-generated product insights
+             * @example {
+             *       "summary": "Comfortable running shoes for daily use",
+             *       "pros": [
+             *         "Lightweight",
+             *         "Durable"
+             *       ]
+             *     }
              */
-            amount: string;
+            insights: Record<string, never>;
             /**
-             * @description Currency code
-             * @example USD
+             * Format: date-time
+             * @example 2024-01-20T12:00:00.000Z
              */
-            currencyCode: string;
-        };
-        ShopifyPriceRangeDto: {
-            /** @description Minimum variant price */
-            minVariantPrice: components["schemas"]["ShopifyMoneyDto"];
-            /** @description Maximum variant price */
-            maxVariantPrice: components["schemas"]["ShopifyMoneyDto"];
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @example 2024-01-20T12:00:00.000Z
+             */
+            updatedAt: string;
         };
         ShopifyProductDto: {
-            /**
-             * @description Shopify product ID in GraphQL format
-             * @example gid://shopify/Product/123456789
-             */
+            /** @example uuid-product-id */
             id: string;
-            /**
-             * @description Product title
-             * @example Running Shoes
-             */
+            /** @example gid://shopify/Product/123456789 */
+            shopifyProductId: string;
+            /** @example Running Shoes */
             title: string;
-            /**
-             * @description URL-safe product handle
-             * @example running-shoes
-             */
+            /** @example running-shoes */
             handle: string;
-            /**
-             * @description Product vendor
-             * @example Northwind
-             */
+            /** @example Comfortable running shoes */
+            description: string;
+            /** @example <p>Comfortable running shoes</p> */
+            descriptionHtml: string;
+            /** @example Northwind */
             vendor: string;
-            /**
-             * @description Product type
-             * @example Footwear
-             */
+            /** @example Footwear */
             productType: string;
             /**
-             * @description Product tags
              * @example [
              *       "sport",
              *       "new-arrivals"
@@ -293,45 +295,47 @@ export interface components {
              */
             tags: string[];
             /**
-             * @description Product publication status
              * @example ACTIVE
              * @enum {string}
              */
             status: "ACTIVE" | "ARCHIVED" | "DRAFT" | "UNLISTED";
             /**
-             * @description Product creation timestamp
-             * @example 2024-01-15T10:30:00Z
+             * Format: date-time
+             * @example 2024-01-15T10:30:00.000Z
              */
             createdAt: string;
             /**
-             * @description Product last update timestamp
-             * @example 2024-01-20T12:00:00Z
+             * Format: date-time
+             * @example 2024-01-20T12:00:00.000Z
              */
             updatedAt: string;
             /**
-             * @description Product publication timestamp
-             * @example 2024-01-18T09:00:00Z
+             * Format: date-time
+             * @example 2024-01-18T09:00:00.000Z
              */
             publishedAt: string | null;
-            /**
-             * @description Total inventory count across all variants
-             * @example 24
-             */
+            /** @example 24 */
             totalInventory: number;
-            /** @description Featured media of the product, null if the product has no media */
-            featuredMedia: components["schemas"]["ShopifyFeaturedMediaDto"] | null;
-            /**
-             * @description Online store product URL
-             * @example https://example.myshopify.com/products/running-shoes
-             */
+            seoTitle: string | null;
+            seoDescription: string | null;
+            featuredImageUrl: string | null;
+            featuredImageAltText: string | null;
+            featuredImageWidth: number | null;
+            featuredImageHeight: number | null;
             onlineStoreUrl: string | null;
-            /**
-             * @description Online store preview URL
-             * @example https://example.myshopify.com/products/running-shoes?preview=true
-             */
             onlineStorePreviewUrl: string | null;
-            /** @description Product price range */
-            priceRangeV2: components["schemas"]["ShopifyPriceRangeDto"];
+            /** @example 59.99 */
+            minVariantPrice: string;
+            /** @example USD */
+            minVariantCurrency: string;
+            /** @example 79.99 */
+            maxVariantPrice: string;
+            /** @example USD */
+            maxVariantCurrency: string;
+            /** @description Product variants */
+            variants: components["schemas"]["ProductVariantDto"][];
+            /** @description AI-generated product review */
+            productReview: components["schemas"]["ProductReviewDto"] | null;
         };
         ShopifyPageInfoDto: {
             /**
@@ -340,17 +344,60 @@ export interface components {
              */
             hasNextPage: boolean;
             /**
-             * @description Cursor for fetching the next page
-             * @example eyJsYXN0X2lk...
+             * @description UUID of the last product in the current page
+             * @example 550e8400-e29b-41d4-a716-446655440000
              */
             endCursor: string | null;
         };
         ShopifyProductsResponseDto: {
-            /** @description List of Shopify products */
+            /** @description Products retrieved from the database */
             items: components["schemas"]["ShopifyProductDto"][];
             /** @description Pagination information */
             pageInfo: components["schemas"]["ShopifyPageInfoDto"];
         };
+        /** @enum {string} */
+        ProductStatus: "ACTIVE" | "ARCHIVED" | "DRAFT" | "UNLISTED";
+        ProductResponseDto: {
+            id: string;
+            shopifyProductId: string;
+            shopId: string;
+            title: string;
+            handle: string;
+            description: string;
+            descriptionHtml: string;
+            vendor: string;
+            productType: string;
+            tags: string[];
+            status: components["schemas"]["ProductStatus"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            publishedAt?: string | null;
+            totalInventory: number;
+            seoTitle?: string | null;
+            seoDescription?: string | null;
+            featuredImageUrl?: string | null;
+            featuredImageAltText?: string | null;
+            featuredImageWidth?: number | null;
+            featuredImageHeight?: number | null;
+            onlineStoreUrl?: string | null;
+            onlineStorePreviewUrl?: string | null;
+            minVariantPrice: number;
+            minVariantCurrency: string;
+            maxVariantPrice: number;
+            maxVariantCurrency: string;
+            /** Format: date-time */
+            syncedAt: string;
+            /** Format: date-time */
+            recordUpdatedAt: string;
+            /** @description Product variants */
+            variants: components["schemas"]["ProductVariantDto"][];
+            /** @description AI-generated product review */
+            productReview: components["schemas"]["ProductReviewDto"] | null;
+        };
+        ForbiddenException: Record<string, never>;
         ShopifyShopBadGatewayErrorDto: {
             /**
              * @description HTTP status code
@@ -368,100 +415,6 @@ export interface components {
              */
             error: string;
         };
-        ShopifyShopPrimaryDomainDto: {
-            /**
-             * @description Primary domain host name
-             * @example shop.example.com
-             */
-            host: string;
-            /**
-             * @description Primary domain URL
-             * @example https://shop.example.com
-             */
-            url: string;
-        };
-        ShopifyShopPlanDto: {
-            /**
-             * @description Human-readable name of the Shopify plan
-             * @example Basic
-             */
-            displayName: string;
-            /**
-             * @description True for Partner development stores
-             * @example false
-             */
-            partnerDevelopment: boolean;
-            /**
-             * @description True for Shopify Plus stores
-             * @example false
-             */
-            shopifyPlus: boolean;
-        };
-        ShopifyShopDto: {
-            /**
-             * @description Shopify shop ID in GraphQL format
-             * @example gid://shopify/Shop/12345678
-             */
-            id: string;
-            /**
-             * @description Shop name
-             * @example My Store
-             */
-            name: string;
-            /**
-             * @description The shop .myshopify.com domain
-             * @example example.myshopify.com
-             */
-            myshopifyDomain: string;
-            /**
-             * @description Online store URL
-             * @example https://example.myshopify.com
-             */
-            url: string;
-            /**
-             * @description Shop owner name
-             * @example Jane Doe
-             */
-            shopOwnerName: string;
-            /**
-             * @description Currency the shop sells in (ISO 4217)
-             * @example USD
-             */
-            currencyCode: string;
-            /**
-             * @description Presentment currencies enabled for the shop (ISO 4217)
-             * @example [
-             *       "USD",
-             *       "EUR"
-             *     ]
-             */
-            enabledPresentmentCurrencies: string[];
-            /**
-             * @description Shop time zone as defined by IANA
-             * @example Europe/Berlin
-             */
-            ianaTimezone: string;
-            /**
-             * @description Shop time zone abbreviation
-             * @example CET
-             */
-            timezoneAbbreviation: string;
-            /**
-             * @description Shop creation timestamp (ISO 8601)
-             * @example 2024-05-17T09:30:00Z
-             */
-            createdAt: string;
-            /** @description Primary domain of the online store */
-            primaryDomain: components["schemas"]["ShopifyShopPrimaryDomainDto"];
-            /** @description Shopify billing plan of the shop */
-            plan: components["schemas"]["ShopifyShopPlanDto"];
-            /**
-             * @description Whether the shop has outstanding setup steps
-             * @example false
-             */
-            setupRequired: boolean;
-        };
-        ForbiddenException: Record<string, never>;
     };
     responses: never;
     parameters: never;
@@ -716,6 +669,7 @@ export interface operations {
     ShopifyController_getProducts: {
         parameters: {
             query?: {
+                /** @description Product ID cursor from the previous page */
                 after?: string;
                 limit?: number;
             };
@@ -725,7 +679,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description List of products for the user shop */
+            /** @description Paginated list of products with variants and AI reviews */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -743,33 +697,39 @@ export interface operations {
                     "application/json": components["schemas"]["ShopNotFoundDto"] | components["schemas"]["UserNotFoundDto"];
                 };
             };
-            502: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShopifyShopBadGatewayErrorDto"];
-                };
-            };
         };
     };
     ShopifyController_getShop: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                /** @description Shopify product ID (GID) */
+                productId: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Shop details fetched from Shopify */
+            /**
+             * @description Shop details fetched from Shopify
+             *
+             *     Shopify product details with AI analysis
+             */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ShopifyShopDto"];
+                    "application/json": components["schemas"]["ProductResponseDto"];
                 };
+            };
+            /** @description productId is required */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             403: {
                 headers: {
@@ -779,7 +739,11 @@ export interface operations {
                     "application/json": components["schemas"]["ForbiddenException"];
                 };
             };
-            /** @description Shop or user not found (see `code`) */
+            /**
+             * @description Shop or user not found (see `code`)
+             *
+             *     Shop or user not found (see `code`)
+             */
             404: {
                 headers: {
                     [name: string]: unknown;

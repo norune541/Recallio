@@ -55,6 +55,7 @@
         "eslint": "^10.13.0",
         "prettier": "^3.4.2",
         "prisma": "7",
+        "prisma-class-generator": "^0.7.0",
         "prisma-erd-generator": "^3.2.1",
         "puppeteer": "^25.16.0",
         "source-map-support": "^0.5.21",
@@ -1719,6 +1720,8 @@
 
     "prisma": ["prisma@7.10.0", "", { "dependencies": { "@prisma/config": "7.10.0", "@prisma/dev": "0.24.17", "@prisma/engines": "7.10.0", "@prisma/studio-core": "0.33.0", "mysql2": "3.15.3", "postgres": "3.4.7" }, "peerDependencies": { "better-sqlite3": ">=9.0.0", "typescript": ">=5.4.0" }, "optionalPeers": ["better-sqlite3", "typescript"], "bin": { "prisma": "build/index.js" } }, "sha512-o0ornyJOWgygVAzGCpr8PdXV8EJLHyVGDDUr/voBQt8Azzw8cYTByzzPGcA/m4tCkPcnJA8raEOv2CslsKhPEw=="],
 
+    "prisma-class-generator": ["prisma-class-generator@0.7.0", "", { "dependencies": { "@prisma/generator-helper": "^7.9.1", "prettier": "3.9.6" }, "bin": { "prisma-class-generator": "dist/bin.js" } }, "sha512-dy+WM8459syClbn+fQlrRg3JknV8WC70Sz7PVKL0aK2JvAPt/gpVgvRuqaZArrAQoOVQvd5P/CZMaSdvgYP4Rw=="],
+
     "prisma-erd-generator": ["prisma-erd-generator@3.2.1", "", { "dependencies": { "@prisma/generator-helper": "^7.0.0", "dotenv": "^16.6.1" }, "peerDependencies": { "@hpcc-js/wasm-graphviz": "^1.0.0", "@mermaid-js/mermaid-cli": "^11.0.0", "@prisma/client": "^5.0.0 || ^6.0.0 || ^7.0.0" }, "optionalPeers": ["@hpcc-js/wasm-graphviz", "@mermaid-js/mermaid-cli"], "bin": { "prisma-erd-generator": "dist/index.js" } }, "sha512-+Ar/z6XcO3JrBaf1M0+c4xA2vEKo10sMxZ5vZ6BxChIml+x5/6fKEaK70KHatOYzdZrFUIrh8GcQM3s2r7qnKQ=="],
 
     "prompts": ["prompts@2.4.2", "", { "dependencies": { "kleur": "^3.0.3", "sisteransi": "^1.0.5" } }, "sha512-NxNv/kLguCA7p3jE8oL2aEBsrJWgAakBpgmgK6lpPWV+WuOmY6r2/zbAVnP+T8bQlA0nzHXSJSJW0Hq7ylaD2Q=="],
@@ -2302,6 +2305,8 @@
     "pkg-types/confbox": ["confbox@0.3.1", "", {}, "sha512-cKUSoKa8YxFZZSmraVi7onONx3amu77ngK3kGpsYHDH7drPwCRkQE1RYMPlLRrMtnciRj274XNRxcHxnKmDSnA=="],
 
     "pkg-up/find-up": ["find-up@3.0.0", "", { "dependencies": { "locate-path": "^3.0.0" } }, "sha512-1yD6RmLI1XBfxugvORwlck6f75tYL+iR0jqwsOrOxMZyGYqUuDhJ0l4AXdO1iX/FTs9cBAMEk1gWSEx1kSbylg=="],
+
+    "prisma-class-generator/prettier": ["prettier@3.9.6", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-OpN0zzVdiaiAhxpuuj5efpIS4sY9j7bY6uR5mnj5yPzGkdkjNKSJeUThPb60Jw29QuAZgA4o+/iB49kFiaBX6g=="],
 
     "prisma-erd-generator/dotenv": ["dotenv@16.6.1", "", {}, "sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow=="],
 

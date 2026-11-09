@@ -14,11 +14,15 @@ import { GetShopUseCase } from './use-cases/shop/get-shop.js';
 import { DeleteShop } from './use-cases/shop/delete-shop.use-case.js';
 import { ClaudeModule } from '../claude/claude.module.js';
 import { SyncShopProductsUseCase } from './sync/sync-shop.sync.js';
+import { GetProductsUseCase } from './use-cases/shop/get-products.js';
+import { GetProductUseCase } from './use-cases/shop/get-product.js';
 
 @Module({
   imports: [ClaudeModule],
   controllers: [ShopifyController],
   providers: [
+    GetProductUseCase,
+    GetProductsUseCase,
     SyncShopProductsUseCase,
     ShopifySyncProvider,
     ShopifyDao,

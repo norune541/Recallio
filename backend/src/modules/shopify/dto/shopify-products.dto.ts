@@ -1,180 +1,178 @@
 import { ApiProperty } from '@nestjs/swagger';
+import type { Prisma } from 'backend/src/generated/prisma/client.js';
 
-export class ShopifyMoneyDto {
-  @ApiProperty({
-    description: 'Product price amount',
-    example: '59.99',
-  })
-  amount: string;
+export class ProductVariantDto {
+  @ApiProperty({ example: 'uuid-variant-id' })
+  id: string;
 
-  @ApiProperty({
-    description: 'Currency code',
-    example: 'USD',
-  })
-  currencyCode: string;
-}
+  @ApiProperty({ example: 'gid://shopify/ProductVariant/123456789' })
+  shopifyVariantId: string;
 
-export class ShopifyPriceRangeDto {
-  @ApiProperty({ type: ShopifyMoneyDto, description: 'Minimum variant price' })
-  minVariantPrice: ShopifyMoneyDto;
+  @ApiProperty({ example: 'Running Shoes - Size 42' })
+  title: string;
 
-  @ApiProperty({ type: ShopifyMoneyDto, description: 'Maximum variant price' })
-  maxVariantPrice: ShopifyMoneyDto;
-}
+  @ApiProperty({ example: 'SHOES-42', nullable: true, type: String })
+  sku: string | null;
 
-export class ShopifyImageDto {
-  @ApiProperty({
-    description: 'Image URL',
-    example: 'https://cdn.shopify.com/s/files/1/0000/0000/products/shoes.jpg',
-  })
-  url: string;
+  @ApiProperty({ example: '1234567890123', nullable: true, type: String })
+  barcode: string | null;
+
+  @ApiProperty({ example: '59.99', type: String })
+  price: string;
 
   @ApiProperty({
-    description: 'Image alternative text',
-    example: 'Red running shoes',
+    example: '79.99',
+    nullable: true,
     type: String,
-    nullable: true,
   })
-  altText: string | null;
+  compareAtPrice: string | null;
+
+  @ApiProperty({ example: 10 })
+  inventoryQuantity: number;
 
   @ApiProperty({
-    description:
-      'Original image width in pixels, null if the image is not hosted by Shopify',
-    example: 1200,
-    type: Number,
-    nullable: true,
+    enum: ['DENY', 'CONTINUE'],
+    example: 'CONTINUE',
   })
-  width: number | null;
+  inventoryPolicy: 'DENY' | 'CONTINUE';
 
   @ApiProperty({
-    description:
-      'Original image height in pixels, null if the image is not hosted by Shopify',
-    example: 800,
-    type: Number,
-    nullable: true,
+    description: 'Selected variant options',
+    example: [{ name: 'Size', value: '42' }],
+    type: Object,
   })
-  height: number | null;
+  selectedOptions: Prisma.JsonValue;
 }
 
-export class ShopifyMediaPreviewDto {
-  @ApiProperty({
-    type: ShopifyImageDto,
-    description: 'Preview image of the media',
-    nullable: true,
-  })
-  image: ShopifyImageDto | null;
-}
+export class ProductReviewDto {
+  @ApiProperty({ example: 'Running Shoes Review' })
+  seoTitle: string;
 
-export class ShopifyFeaturedMediaDto {
   @ApiProperty({
-    type: ShopifyMediaPreviewDto,
-    description: 'Preview of the featured media',
-    nullable: true,
+    example: 'Discover the best running shoes for everyday training.',
   })
-  preview: ShopifyMediaPreviewDto | null;
+  seoMetaDescription: string;
+
+  @ApiProperty({
+    description: 'AI-generated product insights',
+    example: {
+      summary: 'Comfortable running shoes for daily use',
+      pros: ['Lightweight', 'Durable'],
+    },
+    type: Object,
+  })
+  insights: Prisma.JsonValue;
+
+  @ApiProperty({ example: '2024-01-20T12:00:00.000Z' })
+  createdAt: Date;
+
+  @ApiProperty({ example: '2024-01-20T12:00:00.000Z' })
+  updatedAt: Date;
 }
 
 export class ShopifyProductDto {
-  @ApiProperty({
-    description: 'Shopify product ID in GraphQL format',
-    example: 'gid://shopify/Product/123456789',
-  })
+  @ApiProperty({ example: 'uuid-product-id' })
   id: string;
 
   @ApiProperty({
-    description: 'Product title',
-    example: 'Running Shoes',
+    example: 'gid://shopify/Product/123456789',
   })
+  shopifyProductId: string;
+
+  @ApiProperty({ example: 'Running Shoes' })
   title: string;
 
-  @ApiProperty({
-    description: 'URL-safe product handle',
-    example: 'running-shoes',
-  })
+  @ApiProperty({ example: 'running-shoes' })
   handle: string;
 
-  @ApiProperty({
-    description: 'Product vendor',
-    example: 'Northwind',
-  })
+  @ApiProperty({ example: 'Comfortable running shoes' })
+  description: string;
+
+  @ApiProperty({ example: '<p>Comfortable running shoes</p>' })
+  descriptionHtml: string;
+
+  @ApiProperty({ example: 'Northwind' })
   vendor: string;
 
-  @ApiProperty({
-    description: 'Product type',
-    example: 'Footwear',
-  })
+  @ApiProperty({ example: 'Footwear' })
   productType: string;
 
   @ApiProperty({
-    description: 'Product tags',
-    example: ['sport', 'new-arrivals'],
     type: [String],
+    example: ['sport', 'new-arrivals'],
   })
   tags: string[];
 
   @ApiProperty({
-    description: 'Product publication status',
     enum: ['ACTIVE', 'ARCHIVED', 'DRAFT', 'UNLISTED'],
     example: 'ACTIVE',
   })
   status: 'ACTIVE' | 'ARCHIVED' | 'DRAFT' | 'UNLISTED';
 
-  @ApiProperty({
-    description: 'Product creation timestamp',
-    example: '2024-01-15T10:30:00Z',
-  })
-  createdAt: string;
+  @ApiProperty({ example: '2024-01-15T10:30:00.000Z' })
+  createdAt: Date;
+
+  @ApiProperty({ example: '2024-01-20T12:00:00.000Z' })
+  updatedAt: Date;
 
   @ApiProperty({
-    description: 'Product last update timestamp',
-    example: '2024-01-20T12:00:00Z',
-  })
-  updatedAt: string;
-
-  @ApiProperty({
-    description: 'Product publication timestamp',
-    example: '2024-01-18T09:00:00Z',
-    type: String,
+    example: '2024-01-18T09:00:00.000Z',
     nullable: true,
+    type: Date,
   })
-  publishedAt: string | null;
+  publishedAt: Date | null;
 
-  @ApiProperty({
-    description: 'Total inventory count across all variants',
-    example: 24,
-  })
+  @ApiProperty({ example: 24 })
   totalInventory: number;
 
-  @ApiProperty({
-    type: ShopifyFeaturedMediaDto,
-    description:
-      'Featured media of the product, null if the product has no media',
-    nullable: true,
-  })
-  featuredMedia: ShopifyFeaturedMediaDto | null;
+  @ApiProperty({ nullable: true, type: String })
+  seoTitle: string | null;
 
-  @ApiProperty({
-    description: 'Online store product URL',
-    example: 'https://example.myshopify.com/products/running-shoes',
-    type: String,
-    nullable: true,
-  })
+  @ApiProperty({ nullable: true, type: String })
+  seoDescription: string | null;
+
+  @ApiProperty({ nullable: true, type: String })
+  featuredImageUrl: string | null;
+
+  @ApiProperty({ nullable: true, type: String })
+  featuredImageAltText: string | null;
+
+  @ApiProperty({ nullable: true, type: Number })
+  featuredImageWidth: number | null;
+
+  @ApiProperty({ nullable: true, type: Number })
+  featuredImageHeight: number | null;
+
+  @ApiProperty({ nullable: true, type: String })
   onlineStoreUrl: string | null;
 
-  @ApiProperty({
-    description: 'Online store preview URL',
-    example:
-      'https://example.myshopify.com/products/running-shoes?preview=true',
-    type: String,
-    nullable: true,
-  })
+  @ApiProperty({ nullable: true, type: String })
   onlineStorePreviewUrl: string | null;
 
+  @ApiProperty({ example: '59.99', type: String })
+  minVariantPrice: string;
+
+  @ApiProperty({ example: 'USD' })
+  minVariantCurrency: string;
+
+  @ApiProperty({ example: '79.99', type: String })
+  maxVariantPrice: string;
+
+  @ApiProperty({ example: 'USD' })
+  maxVariantCurrency: string;
+
   @ApiProperty({
-    type: ShopifyPriceRangeDto,
-    description: 'Product price range',
+    type: [ProductVariantDto],
+    description: 'Product variants',
   })
-  priceRangeV2: ShopifyPriceRangeDto;
+  variants: ProductVariantDto[];
+
+  @ApiProperty({
+    type: ProductReviewDto,
+    nullable: true,
+    description: 'AI-generated product review',
+  })
+  productReview: ProductReviewDto | null;
 }
 
 export class ShopifyPageInfoDto {
@@ -185,8 +183,8 @@ export class ShopifyPageInfoDto {
   hasNextPage: boolean;
 
   @ApiProperty({
-    description: 'Cursor for fetching the next page',
-    example: 'eyJsYXN0X2lk...',
+    description: 'UUID of the last product in the current page',
+    example: '550e8400-e29b-41d4-a716-446655440000',
     nullable: true,
     type: String,
   })
@@ -196,7 +194,7 @@ export class ShopifyPageInfoDto {
 export class ShopifyProductsResponseDto {
   @ApiProperty({
     type: [ShopifyProductDto],
-    description: 'List of Shopify products',
+    description: 'Products retrieved from the database',
   })
   items: ShopifyProductDto[];
 
